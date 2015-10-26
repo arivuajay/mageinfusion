@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<config>
+  <modules>
+    <ARK_MageInfusion>
+      <version>0.1.0</version>
+    </ARK_MageInfusion>
+  </modules>
+  <global>
+    <helpers>
+      <mageinfusion>
+        <class>ARK_MageInfusion_Helper</class>
+      </mageinfusion>
+    </helpers>
+  </global>
+</config> 

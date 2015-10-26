@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<config>
+    <tabs>
+        <mageinfconf translate="label" module="mageinfusion">
+            <label>InfusionSoft</label>
+            <sort_order>200</sort_order>
+        </mageinfconf>
+    </tabs>
+    <sections>
+        <mageinftab  translate="label" module="mageinfusion">
+            <label>InfusionSoft options</label>
+            <tab>mageinfconf</tab>
+            <sort_order>200</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+                <general translate="label">
+                    <label>General</label>
+                    <sort_order>50</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <expanded>1</expanded>
+                    <fields>
+                        <inf_soft_id translate="label">
+                            <label>InfusionSoft ID</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>200</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </inf_soft_id>
+                    </fields>
+                </general>
+            </groups>
+        </mageinftab>
+    </sections>
+</config>
