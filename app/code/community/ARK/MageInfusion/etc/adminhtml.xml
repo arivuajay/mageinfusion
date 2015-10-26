@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
-	<config>
-		<acl>
-			<resources>
-				<admin>
-					<children>
-						<system>
-							<children>
-								<config>
-									<children>
-										<mageinftab translate="title" module="mageinfusion">
-											<title>InfusionSoft options Section</title>
-											<sort_order>200</sort_order>
-										</mageinftab>
-									</children>
-								</config>
-							</children>
-						</system>
-					</children>
-				</admin>
-			</resources>
-		</acl>
-	</config>
+<config>
+    <acl>
+        <resources>
+            <admin>
+                <children>
+                    <system>
+                        <children>
+                            <config>
+                                <children>
+                                    <mageinftab translate="title" module="mageinfusion">
+                                        <title>InfusionSoft options Section</title>
+                                        <sort_order>200</sort_order>
+                                    </mageinftab>
+                                </children>
+                            </config>
+                        </children>
+                    </system>
+                </children>
+            </admin>
+        </resources>
+    </acl>
+</config>
