@@ -32,8 +32,8 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </enabled>
-                        <client_id translate="label">
-                            <label>InfusionSoft API Client ID</label>
+                        <inf_api_key translate="label">
+                            <label>InfusionSoft API Key</label>
                             <frontend_type>text</frontend_type>
                             <sort_order>20</sort_order>
                             <show_in_default>1</show_in_default>
@@ -43,21 +43,9 @@
                                 <enabled>1</enabled>
                             </depends>
                             <validate>required-entry</validate>
-                        </client_id>
-                        <client_secret translate="label">
-                            <label>InfusionSoft API Client Secret</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>30</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <depends>
-                                <enabled>1</enabled>
-                            </depends>
-                            <validate>required-entry</validate>
-                        </client_secret>
-                        <client_redirect translate="label">
-                            <label>InfusionSoft Client Redirect</label>
+                        </inf_api_key>
+                        <inf_app_url translate="label">
+                            <label>InfusionSoft Application URL</label>
                             <frontend_type>text</frontend_type>
                             <sort_order>40</sort_order>
                             <show_in_default>1</show_in_default>
@@ -68,7 +56,7 @@
                             </depends>
                             <validate>validate-url</validate>
                             <!--<validate>required-entry</validate>-->
-                        </client_redirect>
+                        </inf_app_url>
                     </fields>
                 </general>
             </groups>
