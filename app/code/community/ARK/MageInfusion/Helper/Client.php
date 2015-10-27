@@ -3,6 +3,8 @@
 require_once dirname(__FILE__) . '/Infusionsoft/Infusionsoft.php';
 
 class ARK_MageInfusion_Helper_Client extends Mage_Core_Helper_Abstract {
+    
+    protected $infusionsoft = null;
 
     const XML_PATH_ENABLED = 'mageinftab/general/enabled';
     const XML_PATH_CLIENT_ID = 'mageinftab/general/client_id';
@@ -15,33 +17,13 @@ class ARK_MageInfusion_Helper_Client extends Mage_Core_Helper_Abstract {
             $this->clientSecret = $this->_getClientSecret();
             $this->redirectUri = $this->_getRedirectUri();
 
-            $infusionsoft = new \Infusionsoft\Infusionsoft(array(
+            $this->infusionsoft = new \Infusionsoft\Infusionsoft(array(
                 'clientId' => $this->clientId,
                 'clientSecret' => $this->clientSecret,
                 'redirectUri' => $this->redirectUri,
             ));
-
-            // If the serialized token is available in the session storage, we tell the SDK
-            // to use that token for subsequent requests.
-            if (isset($_SESSION['token'])) {
-                $infusionsoft->setToken(unserialize($_SESSION['token']));
-            }
-
-            // If we are returning from Infusionsoft we need to exchange the code for an
-            // access token.
-            if (isset($_GET['code']) and ! $infusionsoft->getToken()) {
-                $infusionsoft->requestAccessToken($_GET['code']);
-            }
-
-
-            if ($infusionsoft->getToken()) {
-                // Save the serialized token to the current session for subsequent requests
-                $_SESSION['token'] = serialize($infusionsoft->getToken());
-
-                $infusionsoft->contacts->add(array('FirstName' => 'John', 'LastName' => 'Doe'));
-            } else {
-                echo '<a href="' . $infusionsoft->getAuthorizationUrl() . '">Click here to authorize</a>';
-            }
+            
+            return $this->infusionsoft;
         }
     }
 
@@ -81,4 +63,27 @@ class ARK_MageInfusion_Helper_Client extends Mage_Core_Helper_Abstract {
         return Mage::getStoreConfig($xmlPath, Mage::app()->getStore()->getId());
     }
 
+    public function addContacts($customer_data) {
+        $infusionsoft = $this->infusionsoft;
+        // If the serialized token is available in the session storage, we tell the SDK
+        // to use that token for subsequent requests.
+        if (isset($_SESSION['token'])) {
+            $infusionsoft->setToken(unserialize($_SESSION['token']));
+        }
+        // If we are returning from Infusionsoft we need to exchange the code for an
+        // access token.
+        if (isset($_GET['code']) and ! $infusionsoft->getToken()) {
+            $infusionsoft->requestAccessToken($_GET['code']);
+        }
+
+        if ($infusionsoft->getToken()) {
+            // Save the serialized token to the current session for subsequent requests
+            $_SESSION['token'] = serialize($infusionsoft->getToken());
+
+            $infusionsoft->contacts->add(array('FirstName' => 'John', 'LastName' => 'Doe'));
+        } else {
+            echo '<a href="' . $infusionsoft->getAuthorizationUrl() . '">Click here to authorize</a>';
+        }
+        exit;
+    }
 }

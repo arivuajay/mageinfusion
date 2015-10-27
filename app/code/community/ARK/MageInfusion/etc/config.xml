@@ -7,9 +7,29 @@
   </modules>
   <global>
     <helpers>
-      <mageinfusion>
+      <ark_mageinfusion>
         <class>ARK_MageInfusion_Helper</class>
-      </mageinfusion>
+      </ark_mageinfusion>
     </helpers>
   </global>
+  <adminhtml>
+    <layout>
+        <updates>
+            <customertab>
+                <file>customertab.xml</file>
+            </customertab>
+        </updates>
+    </layout>
+    <events>
+        <adminhtml_customer_save_after>
+            <observers>
+                <ARK_MageInfusion>
+                    <type>model</type>
+                    <class>ARK_MageInfusion_Model_Observer</class>
+                    <method>addContacts</method>
+                </ARK_MageInfusion>
+            </observers>
+        </adminhtml_customer_save_after>
+    </events>
+</adminhtml>
 </config> 
