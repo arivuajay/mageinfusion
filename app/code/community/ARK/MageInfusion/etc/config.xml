@@ -7,9 +7,9 @@
   </modules>
   <global>
     <helpers>
-      <ark_mageinfusion>
+      <mageinfusion>
         <class>ARK_MageInfusion_Helper</class>
-      </ark_mageinfusion>
+      </mageinfusion>
     </helpers>
   </global>
   <adminhtml>

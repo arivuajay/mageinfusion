@@ -1,5 +1,5 @@
 <?php
-require_once dirname(__FILE__) . '/Infusionsoft/Infusionsoft.php';
+//require_once dirname(__FILE__) . '/Infusionsoft/Infusionsoft.php';
 
 class ARK_MageInfusion_Helper_Data extends Mage_Core_Helper_Abstract {
 //
