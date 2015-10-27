@@ -1,7 +1,9 @@
 <?php
+
 require_once dirname(__FILE__) . "/xmlrpc-2.0/lib/xmlrpc.inc";
 
 class ARK_MageInfusion_Helper_Client extends Mage_Core_Helper_Abstract {
+
     protected $client;
     protected $infusionsoft = null;
 
@@ -52,12 +54,25 @@ class ARK_MageInfusion_Helper_Client extends Mage_Core_Helper_Abstract {
     }
 
     public function addContacts($contact) {
-        $call = new xmlrpcmsg("ContactService.add", array(
-            php_xmlrpc_encode($this->infApiKey), 
+        $call = new xmlrpcmsg("ContactService.addWithDupCheck", array(
+            php_xmlrpc_encode($this->infApiKey),
             php_xmlrpc_encode($contact),
             php_xmlrpc_encode(self::API_CONT_DUP_CHECK)
         ));
-        $result = $this->client->send($call);
+        $this->send($call);
+    }
+
+    public function send($call) {
+        try {
+            $result = $this->client->send($call);
+            if ($result->faultCode()) {
+                Mage::getSingleton('core/session')->addError("Infusionsoft Error Code: {$result->faultCode()}. {$result->faultString()}");
+            }else{
+                Mage::getSingleton('core/session')->addSuccess("Saved to Infusionsoft Successfully");
+            }
+        } catch (Exception $exc) {
+            echo $exc->getTraceAsString();
+        }
     }
 
 }

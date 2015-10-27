@@ -17,6 +17,11 @@ class ARK_MageInfusion_Model_Observer {
             "FirstName" => $customer_data['account']['firstname'],
             "LastName" => $customer_data['account']['lastname'],
             "Email" => $customer_data['account']['email'],
+            "StreetAddress1" => $customer_data['address'][1]['street'][0],
+            "StreetAddress2" => $customer_data['address'][1]['street'][1],
+            "City" => $customer_data['address'][1]['city'],
+            "State" => $customer_data['address'][1]['region'],
+            "PostalCode" => $customer_data['address'][1]['postcode'],
         );
         $this->_client->addContacts($contact);
     }

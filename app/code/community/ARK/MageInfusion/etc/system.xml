@@ -43,6 +43,7 @@
                                 <enabled>1</enabled>
                             </depends>
                             <validate>required-entry</validate>
+                            <comment><![CDATA[How to create Infusionsoft API Key. <a target='_blank' href='http://ug.infusionsoft.com/article/AA-00442/0/Infusionsoft-API-Key.html'>Click Here</a>]]></comment>
                         </inf_api_key>
                         <inf_app_url translate="label">
                             <label>InfusionSoft Application URL</label>
@@ -55,7 +56,6 @@
                                 <enabled>1</enabled>
                             </depends>
                             <validate>validate-url</validate>
-                            <!--<validate>required-entry</validate>-->
                         </inf_app_url>
                     </fields>
                 </general>
