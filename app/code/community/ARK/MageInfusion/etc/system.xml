@@ -55,7 +55,7 @@
                             <depends>
                                 <enabled>1</enabled>
                             </depends>
-                            <validate>validate-url</validate>
+                            <validate>required-entry</validate>
                         </inf_app_url>
                     </fields>
                 </general>
