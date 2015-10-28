@@ -14,7 +14,7 @@ class ARK_MageInfusion_Model_Observer {
         $this->_client = Mage::helper('mageinfusion/client');
         if ($this->_client->isEnabled()) {
             $this->_app = new iSDK;
-            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl());
+            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
         }
     }
 
@@ -48,16 +48,33 @@ class ARK_MageInfusion_Model_Observer {
         if (!$this->_appConnection)
             return;
 
-        $customer_data = Mage::app()->getRequest()->getParams();
+        $form_data = Mage::app()->getRequest()->getParams();
         $contact = array(
-            "FirstName" => $customer_data['account']['firstname'],
-            "LastName" => $customer_data['account']['lastname'],
-            "Email" => $customer_data['account']['email'],
-            "StreetAddress1" => $customer_data['address'][1]['street'][0],
-            "StreetAddress2" => $customer_data['address'][1]['street'][1],
-            "City" => $customer_data['address'][1]['city'],
-            "State" => $customer_data['address'][1]['region'],
-            "PostalCode" => $customer_data['address'][1]['postcode'],
+            "FirstName" => $form_data['account']['firstname'],
+            "LastName" => $form_data['account']['lastname'],
+            "Email" => $form_data['account']['email'],
+            "StreetAddress1" => $form_data['address'][1]['street'][0],
+            "StreetAddress2" => $form_data['address'][1]['street'][1],
+            "City" => $form_data['address'][1]['city'],
+            "State" => $form_data['address'][1]['region'],
+            "PostalCode" => $form_data['address'][1]['postcode'],
+        );
+
+
+        $conID = $this->_app->addWithDupCheck($contact, self::API_CONT_DUP_CHECK);
+    }
+
+    public function addProducts() {
+        if (!$this->_appConnection)
+            return;
+
+        $form_data = Mage::app()->getRequest()->getParams();
+        echo '<pre>';
+        print_r($product_data);
+        exit;
+        $product = array(
+            "ProductName" => $form_data['product']['name'],
+            "Description" => $form_data['product']['description'],
         );
 
 
