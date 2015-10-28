@@ -9,7 +9,7 @@ class ARK_MageInfusion_Model_Observer {
     protected $_appConnection = false;
 
     const API_CONT_DUP_CHECK = 'Email';
-    const EAV_CODE = 'infusionsoft';
+    const EAV_CODE = 'infusionsoft_product_id';
     const EAV_LABEL = 'infusionsoft';
     const EAV_TYPE = 0;
 
@@ -17,7 +17,7 @@ class ARK_MageInfusion_Model_Observer {
         $this->_client = Mage::helper('mageinfusion/client');
         if ($this->_client->isEnabled()) {
             $this->_app = new iSDK;
-            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
+            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'throw');
         }
     }
 
@@ -78,9 +78,8 @@ class ARK_MageInfusion_Model_Observer {
             return;
 
         $form_data = Mage::app()->getRequest()->getParams();
-        var_dump($form_data);
-        exit;
-        $cat_ids = $this->_addOrUpdateInfCatKey(array_unique(explode(",", $form_data['category_ids'])));
+        $ids = array_unique(explode(",", $form_data['category_ids']));
+        $cat_ids = $this->_addOrUpdateInfCatKey($ids);
 //        $this->addCategory($form_data['product']['name']);
         echo '<pre>';
         print_r($cat_ids);
@@ -108,15 +107,24 @@ class ARK_MageInfusion_Model_Observer {
         if (!$this->_appConnection)
             return;
 
-        $this->_app->dsAdd($tblName, $data);
+        return $this->_app->dsAdd($tblName, $data);
     }
 
-    protected function _addOrUpdateInfCatKey($catIDS = null) {
-        if (!$catIDS) {
+    public function _addOrUpdateInfCatKey($catIDS = null) {
+        if ($catIDS) {
             foreach ($catIDS as $value) {
+                echo "AA".$value;
                 $_cat = Mage::getModel('catalog/category')->load($value);
                 $data = array('CategoryDisplayName' => $_cat->getName());
-                $result = $this->addData('ProductCategory', $data);
+                $inf_cat_id = $this->addData('ProductCategory', $data);
+                $catSingleton = Mage::getSingleton('catalog/category');
+                $catSingleton->setId((int) $value);
+                $catSingleton->setInfusionsoftCategoryId($inf_cat_id);
+                $catSingleton->setStoreId(0);
+                
+                $ret = Mage::getModel('catalog/category')->getResource()->saveAttribute($catSingleton, 'infusionsoft_category_id');
+                echo '<pre>';
+                print_r($ret);
 
                 $_cat = Mage::getModel('catalog/category')->load($value);
             }

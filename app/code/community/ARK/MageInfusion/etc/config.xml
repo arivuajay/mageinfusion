@@ -2,7 +2,7 @@
 <config>
     <modules>
         <ARK_MageInfusion>
-            <version>0.1.0</version>
+            <version>0.0.1</version>
         </ARK_MageInfusion>
     </modules>
     <global>
@@ -11,6 +11,17 @@
                 <class>ARK_MageInfusion_Helper</class>
             </mageinfusion>
         </helpers>
+        <resources>
+          <InfCatAttrb_setup>
+            <setup>
+              <module>ARK_MageInfusion</module>
+              <class>Mage_Eav_Model_Entity_Setup</class>
+            </setup>
+            <connection>
+              <use>core_setup</use>
+            </connection>
+          </InfCatAttrb_setup>
+      </resources>
     </global>
     <adminhtml>
         <layout>
