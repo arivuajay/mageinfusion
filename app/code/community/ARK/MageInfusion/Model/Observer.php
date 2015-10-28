@@ -70,7 +70,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @return type
      */
     public function addProducts() {
@@ -78,7 +78,9 @@ class ARK_MageInfusion_Model_Observer {
             return;
 
         $form_data = Mage::app()->getRequest()->getParams();
-        $cat_ids = $this->_get_category_ids($form_data['id']);
+        var_dump($form_data);
+        exit;
+        $cat_ids = $this->_addOrUpdateInfCatKey(array_unique(explode(",", $form_data['category_ids'])));
 //        $this->addCategory($form_data['product']['name']);
         echo '<pre>';
         print_r($cat_ids);
@@ -98,13 +100,27 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $product_id
      * @return type
      */
-    public function addCategory($product_id) {
+    public function addData($tblName, $data) {
         if (!$this->_appConnection)
             return;
+
+        $this->_app->dsAdd($tblName, $data);
+    }
+
+    protected function _addOrUpdateInfCatKey($catIDS = null) {
+        if (!$catIDS) {
+            foreach ($catIDS as $value) {
+                $_cat = Mage::getModel('catalog/category')->load($value);
+                $data = array('CategoryDisplayName' => $_cat->getName());
+                $result = $this->addData('ProductCategory', $data);
+
+                $_cat = Mage::getModel('catalog/category')->load($value);
+            }
+        }
     }
 
     public function _get_category_ids($product_id) {
@@ -114,10 +130,10 @@ class ARK_MageInfusion_Model_Observer {
         foreach ($cats as $key => $category_id) {
             $ids[$key]['category_id'] = $category_id;
             $_cat = Mage::getModel('catalog/category')->load($category_id);
-            
+
             $_parent_cats = $_cat->getParentCategories();
             foreach ($_parent_cats as $parent) {
-                if($category_id != $parent->getId())
+                if ($category_id != $parent->getId())
                     $ids[$key]['parent_id'][] = $parent->getId();
             }
         }
@@ -125,7 +141,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $code
      * @param type $label
      * @param type $attribute_type
