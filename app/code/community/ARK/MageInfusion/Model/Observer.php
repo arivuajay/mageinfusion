@@ -9,9 +9,10 @@ class ARK_MageInfusion_Model_Observer {
     protected $_appConnection = false;
 
     const API_CONT_DUP_CHECK = 'Email';
-    const EAV_CODE = 'infusionsoft_product_id';
+    const EAV_PRODUCT_CODE = 'infusionsoft_product_id';
     const EAV_LABEL = 'infusionsoft';
     const EAV_TYPE = 0;
+    const EAV_CAT_CODE = 'infusionsoft_category_id';
 
     public function __construct() {
         $this->_client = Mage::helper('mageinfusion/client');
@@ -41,7 +42,7 @@ class ARK_MageInfusion_Model_Observer {
             fwrite($config_file, $txt);
             fclose($config_file);
 
-            $this->createAttribute(self::EAV_CODE, self::EAV_LABEL, self::EAV_TYPE, array('simple', 'grouped', 'configurable', 'virtual', 'downloadable', 'bundle'));
+            $this->createAttribute(self::EAV_PRODUCT_CODE, self::EAV_LABEL, self::EAV_TYPE, array('simple', 'grouped', 'configurable', 'virtual', 'downloadable', 'bundle'));
         }
         return;
     }
@@ -78,13 +79,7 @@ class ARK_MageInfusion_Model_Observer {
             return;
 
         $form_data = Mage::app()->getRequest()->getParams();
-        $ids = array_unique(explode(",", $form_data['category_ids']));
-        $cat_ids = $this->_addOrUpdateInfCatKey($ids);
-//        $this->addCategory($form_data['product']['name']);
-        echo '<pre>';
-        print_r($cat_ids);
-        exit;
-        $product = array(
+        $data = array(
             "ProductName" => $form_data['product']['name'],
             "Description" => $form_data['product']['description'],
             "ShortDescription" => $form_data['product']['short_description'],
@@ -93,6 +88,21 @@ class ARK_MageInfusion_Model_Observer {
             "InventoryLimit" => $form_data['stock_data']['original_inventory_qty'],
             "ProductPrice" => $form_data['product']['price'],
         );
+        var_dump($data); exit;
+
+        $catIDS = $this->_addOrUpdateInfCatKey(array_unique(explode(",", $form_data['category_ids'])));
+        var_dump($catIDS); exit;
+        $prodID = $this->_addOrUpdateInfProKey($form_data['id'], $data);
+        $assign = $this->_addOrUpdateInfProCatAssign($prodID, $catIDS);
+
+        $insert = true;
+        if (!empty($if_cat_id)) {
+            if (!empty($this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName')))) {
+                $this->updateData('ProductCategory', $if_cat_id, $data);
+                $insert = false;
+            }
+        }
+
 
 
         $conID = $this->_app->addWithDupCheck($contact, self::API_CONT_DUP_CHECK);
@@ -110,25 +120,134 @@ class ARK_MageInfusion_Model_Observer {
         return $this->_app->dsAdd($tblName, $data);
     }
 
+    /**
+     * 
+     * @param type $tblName
+     * @param type $id
+     * @param type $returnFields
+     * @return type
+     */
+    public function loadData($tblName, $id, $returnFields) {
+        if (!$this->_appConnection)
+            return;
+
+        return $this->_app->dsLoad($tblName, $id, $returnFields);
+    }
+
+    /**
+     * 
+     * @param type $tblName
+     * @param type $limit
+     * @param type $page
+     * @param type $fieldName
+     * @param type $id
+     * @param type $returnFields
+     * @return type
+     */
+    public function findData($tblName, $limit, $page, $fieldName, $id, $returnFields) {
+        if (!$this->_appConnection)
+            return;
+
+        return $this->_app->dsFind($tblName, $limit, $page, $fieldName, $id, $returnFields);
+    }
+
+    /**
+     * 
+     * @param type $tblName
+     * @param type $id
+     * @param type $data
+     * @return type
+     */
+    public function updateData($tblName, $id, $data) {
+        if (!$this->_appConnection)
+            return;
+
+        return $this->_app->dsUpdate($tblName, $id, $data);
+    }
+
     public function _addOrUpdateInfCatKey($catIDS = null) {
+        $retCats = array();
         if ($catIDS) {
             foreach ($catIDS as $value) {
-                echo "AA".$value;
                 $_cat = Mage::getModel('catalog/category')->load($value);
+                $if_cat_id = $_cat->getData(self::EAV_CAT_CODE);
                 $data = array('CategoryDisplayName' => $_cat->getName());
-                $inf_cat_id = $this->addData('ProductCategory', $data);
-                $catSingleton = Mage::getSingleton('catalog/category');
-                $catSingleton->setId((int) $value);
-                $catSingleton->setInfusionsoftCategoryId($inf_cat_id);
-                $catSingleton->setStoreId(0);
-                
-                $ret = Mage::getModel('catalog/category')->getResource()->saveAttribute($catSingleton, 'infusionsoft_category_id');
-                echo '<pre>';
-                print_r($ret);
+                $insert = false;
+                if (!empty($if_cat_id) && !empty($this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName')))) {
+                    $this->updateData('ProductCategory', $if_cat_id, $data);
+                } else {
+                    $if_cat_id = $this->addData('ProductCategory', $data);
+                    $insert = true;
+                }
 
-                $_cat = Mage::getModel('catalog/category')->load($value);
+                if ($insert && $if_cat_id) {
+                    $_cat->setInfusionsoftCategoryId($if_cat_id);
+                    $_cat->save();
+                    $process = Mage::getModel('index/process')->load(5);
+                    $process->reindexAll();  // Re-index category EAV
+                    $process = Mage::getModel('index/process')->load(6);
+                    $process->reindexAll();
+                }
+                $retCats[] = $if_cat_id;
             }
         }
+        return $retCats;
+    }
+
+    public function _addOrUpdateInfProKey($prodId, $data) {
+        $if_prod_id = null;
+        if ($prodId) {
+            $_prod = Mage::getModel('catalog/product')->load($prodId);
+            $if_prod_id = $_prod->getData(self::EAV_PRODUCT_CODE);
+            $insert = false;
+            if (!empty($if_prod_id) && !empty($this->loadData('Product', $if_prod_id, array('ProductName')))) {
+                $this->updateData('Product', $if_prod_id, $data);
+            } else {
+                $if_prod_id = $this->addData('Product', $data);
+                $insert = true;
+            }
+
+            if ($insert && $if_prod_id) {
+                $_prod->setInfusionsoftProductId($if_prod_id);
+                $_prod->save();
+                $process = Mage::getModel('index/process')->load(5);
+                $process->reindexAll();  // Re-index category EAV
+                $process = Mage::getModel('index/process')->load(6);
+                $process->reindexAll();
+            }
+        }
+        return $if_prod_id;
+    }
+
+    public function _addOrUpdateInfProCatAssign($prodID, $catIDS) {
+        $if_prod_id = null;
+        if ($prodId && $catIDS) {
+            foreach ($catIDS as $value) {
+                if (!empty($prodId)) {
+                    $record = $this->findData('ProductCategoryAssign', 1, 0, 'ProductId', $prodId, array('ProductCategoryId'));
+                    var_dump($record);exit;
+                    $this->updateData('Product', $if_prod_id, $data);
+                } else {
+                    $if_prod_id = $this->addData('Product', $data);
+                    $insert = true;
+                }
+
+                $contacts = $app->dsFind();
+
+                $if_cat_id = $this->addData('ProductCategoryAssign', $data);
+
+                if ($insert && $if_cat_id) {
+                    $_cat->setInfusionsoftCategoryId($if_cat_id);
+                    $_cat->save();
+                    $process = Mage::getModel('index/process')->load(5);
+                    $process->reindexAll();  // Re-index category EAV
+                    $process = Mage::getModel('index/process')->load(6);
+                    $process->reindexAll();
+                }
+                $retCats[] = $if_cat_id;
+            }
+        }
+        return $if_prod_id;
     }
 
     public function _get_category_ids($product_id) {
@@ -158,7 +277,7 @@ class ARK_MageInfusion_Model_Observer {
      */
     protected function createAttribute($code, $label, $attribute_type, $product_type) {
         $attributeModel = Mage::getModel('eav/entity_attribute');
-        $attributeId = $attributeModel->getIdByCode('catalog_product', self::EAV_CODE);
+        $attributeId = $attributeModel->getIdByCode('catalog_product', self::EAV_PRODUCT_CODE);
 
         if (!empty($attributeId))
             return;
