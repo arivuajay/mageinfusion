@@ -6,26 +6,23 @@ class ARK_MageInfusion_Model_Observer {
 
     protected $_client = null;
     protected $_app = null;
+    protected $_appConnection = false;
 
     const API_CONT_DUP_CHECK = 'Email';
 
     public function __construct() {
         $this->_client = Mage::helper('mageinfusion/client');
-        if (!$this->_client->isEnabled()) {
-            return;
-        } else {
+        if ($this->_client->isEnabled()) {
             $this->_app = new iSDK;
-            if (!$this->_app->cfgCon($this->_client->getInfAppUrl())) {
-                return;
-            }
+            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl());
         }
     }
+
     /**
      *
      * @param Varien_Event_Observer $observer
      * @return type
      */
-
     public function addConfigFile(Varien_Event_Observer $observer) {
         $form_data = Mage::app()->getRequest()->getParams();
         if ($form_data['section'] == 'mageinftab') {
@@ -45,10 +42,12 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      */
-
     public function addContacts() {
+        if (!$this->_appConnection)
+            return;
+        
         $customer_data = Mage::app()->getRequest()->getParams();
         $contact = array(
             "FirstName" => $customer_data['account']['firstname'],
