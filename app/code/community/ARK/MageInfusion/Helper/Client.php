@@ -1,7 +1,5 @@
 <?php
 
-//require_once dirname(__FILE__) . "/xmlrpc-2.0/lib/xmlrpc.inc";
-
 class ARK_MageInfusion_Helper_Client extends Mage_Core_Helper_Abstract {
 
     protected $client;
@@ -44,4 +42,5 @@ class ARK_MageInfusion_Helper_Client extends Mage_Core_Helper_Abstract {
     protected function _getStoreConfig($xmlPath) {
         return Mage::getStoreConfig($xmlPath, Mage::app()->getStore()->getId());
     }
+
 }

@@ -47,7 +47,7 @@ class ARK_MageInfusion_Model_Observer {
     public function addContacts() {
         if (!$this->_appConnection)
             return;
-        
+
         $customer_data = Mage::app()->getRequest()->getParams();
         $contact = array(
             "FirstName" => $customer_data['account']['firstname'],
