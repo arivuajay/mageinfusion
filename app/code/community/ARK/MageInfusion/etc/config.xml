@@ -12,16 +12,16 @@
             </mageinfusion>
         </helpers>
         <resources>
-          <InfCatAttrb_setup>
-            <setup>
-              <module>ARK_MageInfusion</module>
-              <class>Mage_Eav_Model_Entity_Setup</class>
-            </setup>
-            <connection>
-              <use>core_setup</use>
-            </connection>
-          </InfCatAttrb_setup>
-      </resources>
+            <InfCatAttrb_setup>
+                <setup>
+                    <module>ARK_MageInfusion</module>
+                    <class>Mage_Eav_Model_Entity_Setup</class>
+                </setup>
+                <connection>
+                    <use>core_setup</use>
+                </connection>
+            </InfCatAttrb_setup>
+        </resources>
     </global>
     <adminhtml>
         <layout>
@@ -32,6 +32,7 @@
             </updates>
         </layout>
         <events>
+            <!-- Customer After Save-->
             <adminhtml_customer_save_after>
                 <observers>
                     <ARK_MageInfusion>
@@ -41,6 +42,7 @@
                     </ARK_MageInfusion>
                 </observers>
             </adminhtml_customer_save_after>
+            <!-- Config Save-->
             <controller_action_postdispatch_adminhtml_system_config_save>
                 <observers>
                     <myobserver>
@@ -50,7 +52,8 @@
                     </myobserver>
                 </observers>
             </controller_action_postdispatch_adminhtml_system_config_save>
-            <catalog_product_save_after>
+            <!-- Product Before Save-->
+            <catalog_product_save_before>
                 <observers>
                     <ARK_MageInfusion>
                         <type>model</type>
@@ -58,7 +61,17 @@
                         <method>addProducts</method>
                     </ARK_MageInfusion>
                 </observers>
-            </catalog_product_save_after>
+            </catalog_product_save_before>
+            <!-- Category Before Save-->
+            <catalog_category_save_before>
+                <observers>
+                    <category_category_observer>
+                        <type>singleton</type>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>addCategory</method>
+                    </category_category_observer>
+                </observers>
+            </catalog_category_save_before>
         </events>
     </adminhtml>
 </config>

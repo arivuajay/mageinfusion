@@ -18,17 +18,18 @@ $product_attribute = array(
     'type'              => 'text',
     'label'         =>  'Infusionsoft Product Link ID',
     'input'         =>  'text',
-//    'class'             => '',
+    'class'             => 'dwerewr',
     'global'            => Mage_Catalog_Model_Resource_Eav_Attribute::SCOPE_WEBSITE,
-    'visible'           => true,
+    'visible'           => false,
     'required'          => false,
     'user_defined'      => false,
     'searchable'        => false,
     'filterable'        => false,
     'comparable'        => false,
-    'visible_on_front'  => true,
+    'visible_on_front'  => false,
     'apply_to'          => 'simple,configurable,bundle,grouped',
     'is_configurable'   => false,
+    'is_html_allowed_on_front'   => false,
 );
 $installer->addAttribute(Mage_Catalog_Model_Product::ENTITY, ARK_MageInfusion_Model_Observer::EAV_PRODUCT_CODE, $product_attribute);
 $installer->endSetup();

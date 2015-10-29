@@ -70,37 +70,63 @@ class ARK_MageInfusion_Model_Observer {
      *
      * @return type
      */
-    public function addProducts() {
+    public function addProducts($observer) {
         if (!$this->_appConnection)
             return;
 
-        $form_data = Mage::app()->getRequest()->getParams();
+        $product = $observer->getProduct();
+        $form_data = $product->getData();
         $data = array(
-            "ProductName" => $form_data['product']['name'],
-            "Description" => $form_data['product']['description'],
-            "ShortDescription" => $form_data['product']['short_description'],
-            "Sku" => $form_data['product']['sku'],
-            "Status" => $form_data['product']['status'],
+            "ProductName" => $form_data['name'],
+            "Description" => $form_data['description'],
+            "ShortDescription" => $form_data['short_description'],
+            "Sku" => $form_data['sku'],
+            "Status" => $form_data['status'],
             "InventoryLimit" => $form_data['stock_data']['original_inventory_qty'],
-            "ProductPrice" => $form_data['product']['price'],
+            "ProductPrice" => $form_data['price'],
         );
 
-        $catIDS = $this->_addOrUpdateInfCatKey(array_unique(explode(",", $form_data['category_ids'])));
-        $prodID = $this->_addOrUpdateInfProKey($form_data['id'], $data);
-        $assign = $this->_addOrUpdateInfProCatAssign($prodID, $catIDS);
 
-        $insert = true;
-        if (!empty($if_cat_id)) {
-            $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
-            if (!empty($ldData)) {
-                $this->updateData('ProductCategory', $if_cat_id, $data);
-                $insert = false;
-            }
+        $if_prod_id = $product->getData(self::EAV_PRODUCT_CODE);
+        if ($if_prod_id)
+            $ldData = $this->loadData('Product', $if_prod_id, array('ProductName'));
+
+        if (!empty($if_prod_id) && !empty($ldData)) {
+            $this->updateData('Product', $if_prod_id, $data);
+        } else {
+            $if_prod_id = $this->addData('Product', $data);
         }
 
+        $product->setInfusionsoftProductId($if_prod_id);
 
+        if ($form_data['category_ids']) {
+            $catIDS = $this->_addOrUpdateInfCatKey(array_unique($form_data['category_ids']));
+            $assign = $this->_addOrUpdateInfProCatAssign($if_prod_id, $catIDS);
+        }
+    }
 
-        $conID = $this->_app->addWithDupCheck($contact, self::API_CONT_DUP_CHECK);
+    public function addCategory($observer) {
+        if (!$this->_appConnection)
+            return;
+
+        $event = $observer->getEvent();
+        $category = $event->getCategory();
+
+        $data = array('CategoryDisplayName' => $category->getName());
+        $if_cat_id = $category->getData(self::EAV_CAT_CODE);
+        if ($if_cat_id)
+            $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
+
+        if (!empty($if_cat_id) && !empty($ldData)) {
+            $this->updateData('ProductCategory', $if_cat_id, $data);
+        } else {
+            $if_cat_id = $this->addData('ProductCategory', $data);
+        }
+
+        if (!$category->getData(self::EAV_CAT_CODE))
+            $category->setInfusionsoftCategoryId($if_cat_id);
+
+        return true;
     }
 
     /**
@@ -164,78 +190,43 @@ class ARK_MageInfusion_Model_Observer {
         $retCats = array();
         if ($catIDS) {
             foreach ($catIDS as $value) {
-                $_cat = Mage::getModel('catalog/category')->load($value);
-                $if_cat_id = $_cat->getData(self::EAV_CAT_CODE);
-                $data = array('CategoryDisplayName' => $_cat->getName());
-                $insert = false;
-                $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
-                if (!empty($if_cat_id) && !empty($ldData)) {
-                    $this->updateData('ProductCategory', $if_cat_id, $data);
-                } else {
-                    $if_cat_id = $this->addData('ProductCategory', $data);
-                    $insert = true;
-                }
-                if ($insert && $if_cat_id) {
-                    $_cat->setInfusionsoftCategoryId($if_cat_id);
-                    $_cat->save();
-                    $this->manualReIndex(array(5, 6));
-                }
-                $retCats[] = $if_cat_id;
+                $_cat = Mage::getModel('catalog/category')->load($value)->save();
+//                $if_cat_id = $_cat->getData(self::EAV_CAT_CODE);
+//                $data = array('CategoryDisplayName' => $_cat->getName());
+//                $insert = false;
+//                $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
+//                if (!empty($if_cat_id) && !empty($ldData)) {
+//                    $this->updateData('ProductCategory', $if_cat_id, $data);
+//                } else {
+//                    $if_cat_id = $this->addData('ProductCategory', $data);
+//                    $insert = true;
+//                }
+//                if ($insert && $if_cat_id) {
+//                    $_cat->setInfusionsoftCategoryId($if_cat_id);
+//                    $_cat->save();
+//                    $this->manualReIndex(array(5, 6));
+//                }
+//                $retCats[] = $if_cat_id;
             }
         }
         return $retCats;
     }
 
-    public function _addOrUpdateInfProKey($prodId, $data) {
-        $if_prod_id = null;
-        if ($prodId) {
-            $_prod = Mage::getModel('catalog/product')->load($prodId);
-            $if_prod_id = $_prod->getData(self::EAV_PRODUCT_CODE);
-            $insert = false;
-            $ldData = $this->loadData('Product', $if_prod_id, array('ProductName'));
-            if (!empty($if_prod_id) && !empty($ldData)) {
-                $this->updateData('Product', $if_prod_id, $data);
-            } else {
-                $if_prod_id = $this->addData('Product', $data);
-                $insert = true;
-            }
-
-            //LOADING WHEN SAVING
-            if ($insert && $if_prod_id) {
-                $_prod->setInfusionsoftProductId($if_prod_id);
-                $_prod->save();
-//                $this->manualReIndex(array(5, 6));
-            }
-        }
-        return $if_prod_id;
-    }
-
     public function _addOrUpdateInfProCatAssign($prodID, $catIDS) {
-        $if_prod_id = null;
-        if ($prodId && $catIDS) {
-            foreach ($catIDS as $value) {
-                if (!empty($prodId)) {
-                    $record = $this->findData('ProductCategoryAssign', 1, 0, 'ProductId', $prodId, array('ProductCategoryId'));
-                    var_dump($record);
-                    exit;
-                    $this->updateData('Product', $if_prod_id, $data);
-                } else {
-                    $if_prod_id = $this->addData('Product', $data);
-                    $insert = true;
-                }
-
-                $contacts = $app->dsFind();
-
-                $if_cat_id = $this->addData('ProductCategoryAssign', $data);
-
-                if ($insert && $if_cat_id) {
-                    $_cat->setInfusionsoftCategoryId($if_cat_id);
-                    $_cat->save();
-                }
-                $retCats[] = $if_cat_id;
+        if ($prodID && $catIDS) {
+            $record = $this->findData('ProductCategoryAssign', 1000, 0, 'ProductId', $prodID, array('ProductCategoryId'));
+            $ids = array_map(function ($ar) {
+                return $ar['ProductCategoryId'];
+            }, $record);
+            $newCatIDS = array_diff($catIDS, $ids);
+            foreach ($newCatIDS as $value) {
+                $data = array(
+                    'ProductCategoryId' => $value,
+                    'ProductId' => $prodID
+                );
+                $this->addData('ProductCategoryAssign', $data);
             }
         }
-        return $if_prod_id;
     }
 
     public function manualReIndex($list) {
