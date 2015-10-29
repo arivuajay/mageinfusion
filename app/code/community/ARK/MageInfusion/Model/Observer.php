@@ -9,16 +9,14 @@ class ARK_MageInfusion_Model_Observer {
     protected $_appConnection = false;
 
     const API_CONT_DUP_CHECK = 'Email';
-    const EAV_PRODUCT_CODE = 'infusionsoft_product_id';
-    const EAV_LABEL = 'infusionsoft';
-    const EAV_TYPE = 0;
     const EAV_CAT_CODE = 'infusionsoft_category_id';
+    const EAV_PRODUCT_CODE = 'infusionsoft_product_id';
 
     public function __construct() {
         $this->_client = Mage::helper('mageinfusion/client');
         if ($this->_client->isEnabled()) {
             $this->_app = new iSDK;
-            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'throw');
+            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
         }
     }
 
@@ -41,8 +39,6 @@ class ARK_MageInfusion_Model_Observer {
 
             fwrite($config_file, $txt);
             fclose($config_file);
-
-            $this->createAttribute(self::EAV_PRODUCT_CODE, self::EAV_LABEL, self::EAV_TYPE, array('simple', 'grouped', 'configurable', 'virtual', 'downloadable', 'bundle'));
         }
         return;
     }
@@ -88,16 +84,15 @@ class ARK_MageInfusion_Model_Observer {
             "InventoryLimit" => $form_data['stock_data']['original_inventory_qty'],
             "ProductPrice" => $form_data['product']['price'],
         );
-        var_dump($data); exit;
 
         $catIDS = $this->_addOrUpdateInfCatKey(array_unique(explode(",", $form_data['category_ids'])));
-        var_dump($catIDS); exit;
         $prodID = $this->_addOrUpdateInfProKey($form_data['id'], $data);
         $assign = $this->_addOrUpdateInfProCatAssign($prodID, $catIDS);
 
         $insert = true;
         if (!empty($if_cat_id)) {
-            if (!empty($this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName')))) {
+            $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
+            if (!empty($ldData)) {
                 $this->updateData('ProductCategory', $if_cat_id, $data);
                 $insert = false;
             }
@@ -121,7 +116,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $tblName
      * @param type $id
      * @param type $returnFields
@@ -135,7 +130,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $tblName
      * @param type $limit
      * @param type $page
@@ -152,7 +147,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $tblName
      * @param type $id
      * @param type $data
@@ -173,20 +168,17 @@ class ARK_MageInfusion_Model_Observer {
                 $if_cat_id = $_cat->getData(self::EAV_CAT_CODE);
                 $data = array('CategoryDisplayName' => $_cat->getName());
                 $insert = false;
-                if (!empty($if_cat_id) && !empty($this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName')))) {
+                $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
+                if (!empty($if_cat_id) && !empty($ldData)) {
                     $this->updateData('ProductCategory', $if_cat_id, $data);
                 } else {
                     $if_cat_id = $this->addData('ProductCategory', $data);
                     $insert = true;
                 }
-
                 if ($insert && $if_cat_id) {
                     $_cat->setInfusionsoftCategoryId($if_cat_id);
                     $_cat->save();
-                    $process = Mage::getModel('index/process')->load(5);
-                    $process->reindexAll();  // Re-index category EAV
-                    $process = Mage::getModel('index/process')->load(6);
-                    $process->reindexAll();
+                    $this->manualReIndex(array(5, 6));
                 }
                 $retCats[] = $if_cat_id;
             }
@@ -200,20 +192,19 @@ class ARK_MageInfusion_Model_Observer {
             $_prod = Mage::getModel('catalog/product')->load($prodId);
             $if_prod_id = $_prod->getData(self::EAV_PRODUCT_CODE);
             $insert = false;
-            if (!empty($if_prod_id) && !empty($this->loadData('Product', $if_prod_id, array('ProductName')))) {
+            $ldData = $this->loadData('Product', $if_prod_id, array('ProductName'));
+            if (!empty($if_prod_id) && !empty($ldData)) {
                 $this->updateData('Product', $if_prod_id, $data);
             } else {
                 $if_prod_id = $this->addData('Product', $data);
                 $insert = true;
             }
 
+            //LOADING WHEN SAVING
             if ($insert && $if_prod_id) {
                 $_prod->setInfusionsoftProductId($if_prod_id);
                 $_prod->save();
-                $process = Mage::getModel('index/process')->load(5);
-                $process->reindexAll();  // Re-index category EAV
-                $process = Mage::getModel('index/process')->load(6);
-                $process->reindexAll();
+//                $this->manualReIndex(array(5, 6));
             }
         }
         return $if_prod_id;
@@ -225,7 +216,8 @@ class ARK_MageInfusion_Model_Observer {
             foreach ($catIDS as $value) {
                 if (!empty($prodId)) {
                     $record = $this->findData('ProductCategoryAssign', 1, 0, 'ProductId', $prodId, array('ProductCategoryId'));
-                    var_dump($record);exit;
+                    var_dump($record);
+                    exit;
                     $this->updateData('Product', $if_prod_id, $data);
                 } else {
                     $if_prod_id = $this->addData('Product', $data);
@@ -239,15 +231,20 @@ class ARK_MageInfusion_Model_Observer {
                 if ($insert && $if_cat_id) {
                     $_cat->setInfusionsoftCategoryId($if_cat_id);
                     $_cat->save();
-                    $process = Mage::getModel('index/process')->load(5);
-                    $process->reindexAll();  // Re-index category EAV
-                    $process = Mage::getModel('index/process')->load(6);
-                    $process->reindexAll();
                 }
                 $retCats[] = $if_cat_id;
             }
         }
         return $if_prod_id;
+    }
+
+    public function manualReIndex($list) {
+        $process = Mage::getModel('index/process')->load(5);
+        $process->reindexAll();
+        $process = Mage::getModel('index/process')->load(6);
+        $process->reindexAll();
+
+        return;
     }
 
     public function _get_category_ids($product_id) {
