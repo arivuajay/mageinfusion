@@ -100,7 +100,11 @@ class ARK_MageInfusion_Model_Observer {
         $product->setInfusionsoftProductId($if_prod_id);
 
         if ($form_data['category_ids']) {
-            $catIDS = $this->_addOrUpdateInfCatKey(array_unique($form_data['category_ids']));
+            $this->_addOrUpdateInfCatKey(array_unique($form_data['category_ids']));
+            $cat = $product->getCategoryCollection();
+            echo '<pre>';
+            print_r($cat);
+            exit;
             $assign = $this->_addOrUpdateInfProCatAssign($if_prod_id, $catIDS);
         }
     }
@@ -190,7 +194,10 @@ class ARK_MageInfusion_Model_Observer {
         $retCats = array();
         if ($catIDS) {
             foreach ($catIDS as $value) {
-                $_cat = Mage::getModel('catalog/category')->load($value)->save();
+                $_cat = Mage::getModel('catalog/category')->load($value);
+                $_cat->setName($_cat->getName());
+                $_cat->save();
+                
 //                $if_cat_id = $_cat->getData(self::EAV_CAT_CODE);
 //                $data = array('CategoryDisplayName' => $_cat->getName());
 //                $insert = false;
