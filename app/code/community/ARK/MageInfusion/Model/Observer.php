@@ -11,6 +11,7 @@ class ARK_MageInfusion_Model_Observer {
     const API_CONT_DUP_CHECK = 'Email';
     const EAV_CAT_CODE = 'infusionsoft_category_id';
     const EAV_PRODUCT_CODE = 'infusionsoft_product_id';
+    const EAV_CUSTOMER_CODE = 'infusionsoft_contact_id';
 
     public function __construct() {
         $this->_client = Mage::helper('mageinfusion/client');
@@ -46,24 +47,34 @@ class ARK_MageInfusion_Model_Observer {
     /**
      *
      */
-    public function addContacts() {
+    public function addContacts($observer) {
         if (!$this->_appConnection)
             return;
 
-        $form_data = Mage::app()->getRequest()->getParams();
+//        $product = $observer->getProduct();
+//        $form_data = $product->getData();
+
+        $customer = $observer->getCustomer();
+        $basic_data = $customer->getData();
+//        $addresses = $customer->getPrimaryBillingAddress()->getData();
+//
+//                var_dump($addresses); exit;
+
         $contact = array(
-            "FirstName" => $form_data['account']['firstname'],
-            "LastName" => $form_data['account']['lastname'],
-            "Email" => $form_data['account']['email'],
-            "StreetAddress1" => $form_data['address'][1]['street'][0],
-            "StreetAddress2" => $form_data['address'][1]['street'][1],
-            "City" => $form_data['address'][1]['city'],
-            "State" => $form_data['address'][1]['region'],
-            "PostalCode" => $form_data['address'][1]['postcode'],
+            "FirstName" => $basic_data['firstname'],
+            "LastName" => $basic_data['lastname'],
+            "Email" => $basic_data['email'],
+//            "StreetAddress1" => $form_data['address'][1]['street'][0],
+//            "StreetAddress2" => $form_data['address'][1]['street'][1],
+//            "City" => $form_data['address'][1]['city'],
+//            "State" => $form_data['address'][1]['region'],
+//            "PostalCode" => $form_data['address'][1]['postcode'],
         );
 
 
         $conID = $this->_app->addWithDupCheck($contact, self::API_CONT_DUP_CHECK);
+        $customer->setInfusionsoftContactId($conID);
+        $customer->save();
     }
 
     /**
