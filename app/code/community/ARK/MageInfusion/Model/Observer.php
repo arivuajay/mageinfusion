@@ -100,12 +100,8 @@ class ARK_MageInfusion_Model_Observer {
         $product->setInfusionsoftProductId($if_prod_id);
 
         if ($form_data['category_ids']) {
-            $this->_addOrUpdateInfCatKey(array_unique($form_data['category_ids']));
-            $cat = $product->getCategoryCollection();
-            echo '<pre>';
-            print_r($cat);
-            exit;
-            $assign = $this->_addOrUpdateInfProCatAssign($if_prod_id, $catIDS);
+            $retCats = $this->_addOrUpdateInfCatKey(array_unique($form_data['category_ids']));
+            $this->_addOrUpdateInfProCatAssign($if_prod_id, $retCats);
         }
     }
 
@@ -115,22 +111,27 @@ class ARK_MageInfusion_Model_Observer {
 
         $event = $observer->getEvent();
         $category = $event->getCategory();
+        $if_cat_id = $this->_synCategory($category, true);
+        $category->setInfusionsoftCategoryId($if_cat_id);
 
+        return true;
+    }
+
+    protected function _synCategory(&$category, $update = false) {
         $data = array('CategoryDisplayName' => $category->getName());
         $if_cat_id = $category->getData(self::EAV_CAT_CODE);
         if ($if_cat_id)
             $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
 
-        if (!empty($if_cat_id) && !empty($ldData)) {
+        if (!$update && $ldData) {
+            return $if_cat_id;
+        } elseif ($ldData) {
             $this->updateData('ProductCategory', $if_cat_id, $data);
         } else {
             $if_cat_id = $this->addData('ProductCategory', $data);
         }
 
-        if (!$category->getData(self::EAV_CAT_CODE))
-            $category->setInfusionsoftCategoryId($if_cat_id);
-
-        return true;
+        return $if_cat_id;
     }
 
     /**
@@ -190,42 +191,48 @@ class ARK_MageInfusion_Model_Observer {
         return $this->_app->dsUpdate($tblName, $id, $data);
     }
 
+    public function deleteData($tblName, $id) {
+        if (!$this->_appConnection)
+            return;
+
+        return $this->_app->dsDelete($tblName, $id);
+    }
+
     public function _addOrUpdateInfCatKey($catIDS = null) {
+        $reIndex = false;
         $retCats = array();
         if ($catIDS) {
             foreach ($catIDS as $value) {
                 $_cat = Mage::getModel('catalog/category')->load($value);
-                $_cat->setName($_cat->getName());
-                $_cat->save();
-                
-//                $if_cat_id = $_cat->getData(self::EAV_CAT_CODE);
-//                $data = array('CategoryDisplayName' => $_cat->getName());
-//                $insert = false;
-//                $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
-//                if (!empty($if_cat_id) && !empty($ldData)) {
-//                    $this->updateData('ProductCategory', $if_cat_id, $data);
-//                } else {
-//                    $if_cat_id = $this->addData('ProductCategory', $data);
-//                    $insert = true;
-//                }
-//                if ($insert && $if_cat_id) {
-//                    $_cat->setInfusionsoftCategoryId($if_cat_id);
-//                    $_cat->save();
-//                    $this->manualReIndex(array(5, 6));
-//                }
-//                $retCats[] = $if_cat_id;
+                $old_if_cat_id = $_cat->getData(self::EAV_CAT_CODE);
+
+                $if_cat_id = $this->_synCategory($_cat);
+                if ($old_if_cat_id != $if_cat_id) {
+                    $_cat->setInfusionsoftCategoryId($if_cat_id);
+                    $_cat->save();
+                    $reIndex = true;
+                }
+
+                $retCats[] = $if_cat_id;
             }
+
+            if ($reIndex)
+                $this->manualReIndex(array(5, 6));
         }
         return $retCats;
     }
 
     public function _addOrUpdateInfProCatAssign($prodID, $catIDS) {
         if ($prodID && $catIDS) {
-            $record = $this->findData('ProductCategoryAssign', 1000, 0, 'ProductId', $prodID, array('ProductCategoryId'));
-            $ids = array_map(function ($ar) {
-                return $ar['ProductCategoryId'];
-            }, $record);
-            $newCatIDS = array_diff($catIDS, $ids);
+            $record = $this->findData('ProductCategoryAssign', 1000, 0, 'ProductId', $prodID, array('Id', 'ProductCategoryId'));
+
+            $infCatIDS = array();
+            foreach ($record as $v)
+                $infCatIDS[$v['Id']] = $v['ProductCategoryId'];
+
+            $newCatIDS = array_diff($catIDS, $infCatIDS);
+            $OldRemIDS = array_diff($infCatIDS, $catIDS);
+
             foreach ($newCatIDS as $value) {
                 $data = array(
                     'ProductCategoryId' => $value,
@@ -233,6 +240,8 @@ class ARK_MageInfusion_Model_Observer {
                 );
                 $this->addData('ProductCategoryAssign', $data);
             }
+            foreach ($OldRemIDS as $k => $v)
+                $this->updateData('ProductCategoryAssign', $k, array('ProductCategoryId' => -1));
         }
     }
 
@@ -260,76 +269,6 @@ class ARK_MageInfusion_Model_Observer {
             }
         }
         return $ids;
-    }
-
-    /**
-     *
-     * @param type $code
-     * @param type $label
-     * @param type $attribute_type
-     * @param type $product_type
-     * @return type
-     */
-    protected function createAttribute($code, $label, $attribute_type, $product_type) {
-        $attributeModel = Mage::getModel('eav/entity_attribute');
-        $attributeId = $attributeModel->getIdByCode('catalog_product', self::EAV_PRODUCT_CODE);
-
-        if (!empty($attributeId))
-            return;
-
-        $_attribute_data = array(
-            'attribute_code' => $code,
-            'is_global' => '1',
-            'frontend_input' => $attribute_type, //'boolean',
-            'default_value_text' => '',
-            'default_value_yesno' => '0',
-            'default_value_date' => '',
-            'default_value_textarea' => '',
-            'is_unique' => '0',
-            'is_required' => '0',
-            'apply_to' => $product_type, //array('grouped')
-            'is_configurable' => '0',
-            'is_searchable' => '0',
-            'is_visible_in_advanced_search' => '0',
-            'is_comparable' => '0',
-            'is_used_for_price_rules' => '0',
-            'is_wysiwyg_enabled' => '0',
-            'is_html_allowed_on_front' => '1',
-            'is_visible_on_front' => '0',
-            'used_in_product_listing' => '0',
-            'used_for_sort_by' => '0',
-            'frontend_label' => array($label)
-        );
-
-
-        $model = Mage::getModel('catalog/resource_eav_attribute');
-
-        if (!isset($_attribute_data['is_configurable'])) {
-            $_attribute_data['is_configurable'] = 0;
-        }
-        if (!isset($_attribute_data['is_filterable'])) {
-            $_attribute_data['is_filterable'] = 0;
-        }
-        if (!isset($_attribute_data['is_filterable_in_search'])) {
-            $_attribute_data['is_filterable_in_search'] = 0;
-        }
-
-        if (is_null($model->getIsUserDefined()) || $model->getIsUserDefined() != 0) {
-            $_attribute_data['backend_type'] = $model->getBackendTypeByInput($_attribute_data['frontend_input']);
-        }
-
-        $defaultValueField = $model->getDefaultValueByInput($_attribute_data['frontend_input']);
-        if ($defaultValueField) {
-            $_attribute_data['default_value'] = $this->getRequest()->getParam($defaultValueField);
-        }
-
-
-        $model->addData($_attribute_data);
-
-        $model->setEntityTypeId(Mage::getModel('eav/entity')->setType('catalog_product')->getTypeId());
-        $model->setIsUserDefined(1);
-        $model->save();
-        return;
     }
 
 }
