@@ -15,9 +15,10 @@ class ARK_MageInfusion_Model_Observer {
 
     public function __construct() {
         $this->_client = Mage::helper('mageinfusion/client');
-        if ($this->_client->isEnabled()) {
+        $form_data = Mage::app()->getRequest()->getParams();
+        if ($form_data['section'] != 'mageinftab' && $this->_client->isEnabled()) {
             $this->_app = new iSDK;
-            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
+            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'throw');
         }
     }
 
@@ -27,19 +28,43 @@ class ARK_MageInfusion_Model_Observer {
      * @return type
      */
     public function addConfigFile(Varien_Event_Observer $observer) {
-        $form_data = Mage::app()->getRequest()->getParams();
-        if ($form_data['section'] == 'mageinftab') {
-            $data = $form_data['section']['groups']['general']['fields'];
+        $request = $observer->getControllerAction()->getRequest();
+        if ($request->getParam('section') != 'mageinftab') {
+            return;
+        }
+        $groups = $request->getPost('groups');
 
-            $config_file = fopen(dirname(__FILE__) . "/../Helper/iSDK/conn.cfg.php", "w") or die("Unable to open file!");
+        $data = $groups['general']['fields'];
+        if ($data['enabled']['value'] == '1') {
+            $appURL = $data['inf_app_url']['value'];
+            $appAPI = $data['inf_api_key']['value'];
+
+            $cf_file_path = dirname(__FILE__) . "/../Helper/iSDK/conn.cfg.php";
+            $config_file = fopen($cf_file_path, "w") or die("Unable to open file!");
             chmod($config_file, 0777);
             $txt = "<?php \n";
             $txt .= "\$connInfo = array( \n";
-            $txt .=" \t '{$this->_client->getInfAppUrl()}:{$this->_client->getInfAppUrl()}:i:{$this->_client->getInfApiKey()}:This is for {$this->_client->getInfAppUrl()}.infusionsoft.com' \n";
+            $txt .=" \t '{$appURL}:{$appURL}:i:{$appAPI}:This is for {$appURL}.infusionsoft.com' \n";
             $txt .= ");";
 
             fwrite($config_file, $txt);
             fclose($config_file);
+
+            if (is_file($cf_file_path)) {
+                try {
+                    $this->_app = new iSDK;
+                    $this->_appConnection = $this->_app->cfgCon($appURL, 'throw');
+
+                    Mage::getSingleton('core/session')->addSuccess("Successfully connected with Infusionsoft");
+                } catch (iSDKException $e) {
+                    Mage::getSingleton('core/session')->addError("Infusionsoft Error: {$e->getMessage()}");
+
+                    $_POST['groups']['general']['fields']['enabled']['value'] = '0';
+                    $_POST['groups']['general']['fields']['inf_app_url']['value'] = '';
+                    $_POST['groups']['general']['fields']['inf_api_key']['value'] = '';
+                    @unlink($cf_file_path);
+                }
+            }
         }
         return;
     }
@@ -75,7 +100,7 @@ class ARK_MageInfusion_Model_Observer {
             $cnt_data["PostalCode2"] = $address_data2->getPostcode();
         }
 
-        if($addt_address = array_shift($customer->getAdditionalAddresses())){
+        if ($addt_address = array_shift($customer->getAdditionalAddresses())) {
             $cnt_data["Address3Street1"] = $addt_address->getStreet1();
             $cnt_data["Address3Street2"] = $addt_address->getStreet2();
             $cnt_data["City3"] = $addt_address->getCity();

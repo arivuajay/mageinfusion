@@ -62,7 +62,7 @@
                 </observers>
             </adminhtml_customer_save_after>
             <!-- Config Save-->
-            <controller_action_postdispatch_adminhtml_system_config_save>
+            <controller_action_predispatch_adminhtml_system_config_save>
                 <observers>
                     <myobserver>
                         <type>singleton</type>
@@ -70,7 +70,7 @@
                         <method>addConfigFile</method>
                     </myobserver>
                 </observers>
-            </controller_action_postdispatch_adminhtml_system_config_save>
+            </controller_action_predispatch_adminhtml_system_config_save>
             <!-- Product Before Save-->
             <catalog_product_save_before>
                 <observers>
@@ -93,4 +93,17 @@
             </catalog_category_save_before>
         </events>
     </adminhtml>
+    <frontend>
+        <events>
+            <customer_login>
+                <observers>
+                    <ARK_MageInfusion>
+                        <type>model</type>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>addContacts</method>
+                    </ARK_MageInfusion>
+                </observers>
+            </customer_login>
+        </events>
+    </frontend>
 </config>
