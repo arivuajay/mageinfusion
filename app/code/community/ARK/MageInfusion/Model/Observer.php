@@ -51,28 +51,39 @@ class ARK_MageInfusion_Model_Observer {
         if (!$this->_appConnection)
             return;
 
-//        $product = $observer->getProduct();
-//        $form_data = $product->getData();
-
         $customer = $observer->getCustomer();
         $basic_data = $customer->getData();
-//        $addresses = $customer->getPrimaryBillingAddress()->getData();
-//
-//                var_dump($addresses); exit;
 
-        $contact = array(
+        $cnt_data = array(
             "FirstName" => $basic_data['firstname'],
             "LastName" => $basic_data['lastname'],
             "Email" => $basic_data['email'],
-//            "StreetAddress1" => $form_data['address'][1]['street'][0],
-//            "StreetAddress2" => $form_data['address'][1]['street'][1],
-//            "City" => $form_data['address'][1]['city'],
-//            "State" => $form_data['address'][1]['region'],
-//            "PostalCode" => $form_data['address'][1]['postcode'],
         );
 
+        if ($address_data1 = $customer->getPrimaryBillingAddress()) {
+            $cnt_data["StreetAddress1"] = $address_data1->getStreet1();
+            $cnt_data["StreetAddress2"] = $address_data1->getStreet2();
+            $cnt_data["City"] = $address_data1->getCity();
+            $cnt_data["State"] = $address_data1->getRegion();
+            $cnt_data["PostalCode"] = $address_data1->getPostcode();
+        }
+        if ($address_data2 = $customer->getPrimaryShippingAddress()) {
+            $cnt_data["Address2Street1"] = $address_data2->getStreet1();
+            $cnt_data["Address2Street2"] = $address_data2->getStreet2();
+            $cnt_data["City2"] = $address_data2->getCity();
+            $cnt_data["State2"] = $address_data2->getRegion();
+            $cnt_data["PostalCode2"] = $address_data2->getPostcode();
+        }
 
-        $conID = $this->_app->addWithDupCheck($contact, self::API_CONT_DUP_CHECK);
+        if($addt_address = array_shift($customer->getAdditionalAddresses())){
+            $cnt_data["Address3Street1"] = $addt_address->getStreet1();
+            $cnt_data["Address3Street2"] = $addt_address->getStreet2();
+            $cnt_data["City3"] = $addt_address->getCity();
+            $cnt_data["State3"] = $addt_address->getRegion();
+            $cnt_data["PostalCode3"] = $addt_address->getPostcode();
+        }
+
+        $conID = $this->_app->addWithDupCheck($cnt_data, self::API_CONT_DUP_CHECK);
         $customer->setInfusionsoftContactId($conID);
         $customer->save();
     }
