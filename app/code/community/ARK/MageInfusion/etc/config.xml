@@ -41,6 +41,17 @@
                 </connection>
             </InfCustAttrb_read>
         </resources>
+        <events>
+            <!-- Order Save After -->
+            <sales_order_place_after>
+                <observers>
+                    <ark_mageinfusion_model_observer>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>addOrders</method>
+                    </ark_mageinfusion_model_observer>
+                </observers>
+            </sales_order_place_after>
+        </events>
     </global>
     <adminhtml>
         <layout>
@@ -91,10 +102,12 @@
                     </category_category_observer>
                 </observers>
             </catalog_category_save_before>
+            
         </events>
     </adminhtml>
     <frontend>
         <events>
+            <!-- Customer Login -->
             <customer_login>
                 <observers>
                     <ARK_MageInfusion>

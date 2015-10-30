@@ -164,6 +164,33 @@ class ARK_MageInfusion_Model_Observer {
         return true;
     }
 
+    public function addOrders($observer) {
+        if (!$this->_appConnection)
+            return;
+
+        $event = $observer->getEvent();
+        $order = $event->getOrder();
+
+        $contactId = $order->getCustomer()->getInfusionsoftContactId();
+
+        $creditCardId = 0;
+        $payPlanId = 0;
+
+        $orderedItems = $order->getAllVisibleItems();
+        $productIds = array();
+        foreach ($orderedItems as $item) {
+            $productIds[] = Mage::getModel('catalog/product')->load($item->getProductId())->getInfusionsoftProductId();
+        }
+        $subscriptionIds = array();
+        $processSpecials = false;
+        $promoCodes = array();
+
+        $order = $this->_app->placeOrder(
+                (int) $contactId, (int) $creditCardId, (int) $payPlanId, array_map('intval', $productIds), array_map('intval', $subscriptionIds), (bool) $processSpecials, array_map('strval', $promoCodes)
+        );
+        return true;
+    }
+
     protected function _synCategory(&$category, $update = false) {
         $data = array('CategoryDisplayName' => $category->getName());
         $if_cat_id = $category->getData(self::EAV_CAT_CODE);
