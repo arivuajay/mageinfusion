@@ -13,6 +13,8 @@ $category_attribute  = array(
     'group'         =>  "General Information",
 );
 $installer->addAttribute(Mage_Catalog_Model_Category::ENTITY, ARK_MageInfusion_Model_Observer::EAV_CAT_CODE, $category_attribute);
+$installer->updateAttribute(Mage_Catalog_Model_Category::ENTITY, ARK_MageInfusion_Model_Observer::EAV_CAT_CODE, 'is_visible', '0');
+
 $product_attribute = array(
     'group'             => 'General',
     'type'              => 'text',
@@ -32,5 +34,6 @@ $product_attribute = array(
     'is_html_allowed_on_front'   => false,
 );
 $installer->addAttribute(Mage_Catalog_Model_Product::ENTITY, ARK_MageInfusion_Model_Observer::EAV_PRODUCT_CODE, $product_attribute);
+$installer->updateAttribute(Mage_Catalog_Model_Product::ENTITY, ARK_MageInfusion_Model_Observer::EAV_PRODUCT_CODE, 'is_visible', '0');
 $installer->endSetup();
 ?>

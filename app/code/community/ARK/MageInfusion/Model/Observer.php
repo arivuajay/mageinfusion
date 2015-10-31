@@ -29,10 +29,18 @@ class ARK_MageInfusion_Model_Observer {
      */
     public function addConfigFile(Varien_Event_Observer $observer) {
         $request = $observer->getControllerAction()->getRequest();
+        $groups = $request->getPost('groups');
+        
         if ($request->getParam('section') != 'mageinftab') {
+            if ($request->getParam('section') == 'magesync') {
+                /* SYNCRONIZATION */
+                $sync_data = $groups['tab_2']['fields'];
+                if ($sync_data['sync_enabled']['value'] == '1') {
+                    $this->_syncInfusion($sync_data);
+                }
+            }
             return;
         }
-        $groups = $request->getPost('groups');
 
         $data = $groups['general']['fields'];
         if ($data['enabled']['value'] == '1') {
@@ -66,55 +74,34 @@ class ARK_MageInfusion_Model_Observer {
                 }
             }
         }
+
+
         return;
     }
 
     /**
-     *
+     * 
+     * @param Varien_Event_Observer $observer
+     * @return type
      */
-    public function addContacts($observer) {
+    public function addContacts(Varien_Event_Observer $observer) {
         if (!$this->_appConnection)
             return;
 
-        $customer = $observer->getCustomer();
-        $basic_data = $customer->getData();
+        $event = $observer->getEvent();
+        if ($event->getName() == 'customer_address_save_before')
+            $customer = $observer->getCustomerAddress()->getCustomer();
+        else
+            $customer = $observer->getCustomer();
 
-        $cnt_data = array(
-            "FirstName" => $basic_data['firstname'],
-            "LastName" => $basic_data['lastname'],
-            "Email" => $basic_data['email'],
-        );
-
-        if ($address_data1 = $customer->getPrimaryBillingAddress()) {
-            $cnt_data["StreetAddress1"] = $address_data1->getStreet1();
-            $cnt_data["StreetAddress2"] = $address_data1->getStreet2();
-            $cnt_data["City"] = $address_data1->getCity();
-            $cnt_data["State"] = $address_data1->getRegion();
-            $cnt_data["PostalCode"] = $address_data1->getPostcode();
-        }
-        if ($address_data2 = $customer->getPrimaryShippingAddress()) {
-            $cnt_data["Address2Street1"] = $address_data2->getStreet1();
-            $cnt_data["Address2Street2"] = $address_data2->getStreet2();
-            $cnt_data["City2"] = $address_data2->getCity();
-            $cnt_data["State2"] = $address_data2->getRegion();
-            $cnt_data["PostalCode2"] = $address_data2->getPostcode();
-        }
-
-        if ($addt_address = array_shift($customer->getAdditionalAddresses())) {
-            $cnt_data["Address3Street1"] = $addt_address->getStreet1();
-            $cnt_data["Address3Street2"] = $addt_address->getStreet2();
-            $cnt_data["City3"] = $addt_address->getCity();
-            $cnt_data["State3"] = $addt_address->getRegion();
-            $cnt_data["PostalCode3"] = $addt_address->getPostcode();
-        }
-
-        $conID = $this->_app->addWithDupCheck($cnt_data, self::API_CONT_DUP_CHECK);
+        $conID = $this->_addOrUpdateInfContact($customer);
         $customer->setInfusionsoftContactId($conID);
-        $customer->save();
+//        $customer->save();
     }
 
     /**
-     *
+     * 
+     * @param type $observer
      * @return type
      */
     public function addProducts($observer) {
@@ -152,6 +139,11 @@ class ARK_MageInfusion_Model_Observer {
         }
     }
 
+    /**
+     * 
+     * @param type $observer
+     * @return boolean
+     */
     public function addCategory($observer) {
         if (!$this->_appConnection)
             return;
@@ -164,6 +156,11 @@ class ARK_MageInfusion_Model_Observer {
         return true;
     }
 
+    /**
+     * 
+     * @param type $observer
+     * @return boolean
+     */
     public function addOrders($observer) {
         if (!$this->_appConnection)
             return;
@@ -189,23 +186,6 @@ class ARK_MageInfusion_Model_Observer {
                 (int) $contactId, (int) $creditCardId, (int) $payPlanId, array_map('intval', $productIds), array_map('intval', $subscriptionIds), (bool) $processSpecials, array_map('strval', $promoCodes)
         );
         return true;
-    }
-
-    protected function _synCategory(&$category, $update = false) {
-        $data = array('CategoryDisplayName' => $category->getName());
-        $if_cat_id = $category->getData(self::EAV_CAT_CODE);
-        if ($if_cat_id)
-            $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
-
-        if (!$update && $ldData) {
-            return $if_cat_id;
-        } elseif ($ldData) {
-            $this->updateData('ProductCategory', $if_cat_id, $data);
-        } else {
-            $if_cat_id = $this->addData('ProductCategory', $data);
-        }
-
-        return $if_cat_id;
     }
 
     /**
@@ -265,11 +245,43 @@ class ARK_MageInfusion_Model_Observer {
         return $this->_app->dsUpdate($tblName, $id, $data);
     }
 
+    /**
+     * 
+     * @param type $tblName
+     * @param type $id
+     * @return type
+     */
     public function deleteData($tblName, $id) {
         if (!$this->_appConnection)
             return;
 
         return $this->_app->dsDelete($tblName, $id);
+    }
+
+    public function manualReIndex($list) {
+        $process = Mage::getModel('index/process')->load(5);
+        $process->reindexAll();
+        $process = Mage::getModel('index/process')->load(6);
+        $process->reindexAll();
+
+        return;
+    }
+
+    public function _get_category_ids($product_id) {
+        $product = Mage::getModel('catalog/product')->load($product_id);
+        $ids = array();
+        $cats = $product->getCategoryIds();
+        foreach ($cats as $key => $category_id) {
+            $ids[$key]['category_id'] = $category_id;
+            $_cat = Mage::getModel('catalog/category')->load($category_id);
+
+            $_parent_cats = $_cat->getParentCategories();
+            foreach ($_parent_cats as $parent) {
+                if ($category_id != $parent->getId())
+                    $ids[$key]['parent_id'][] = $parent->getId();
+            }
+        }
+        return $ids;
     }
 
     public function _addOrUpdateInfCatKey($catIDS = null) {
@@ -319,30 +331,139 @@ class ARK_MageInfusion_Model_Observer {
         }
     }
 
-    public function manualReIndex($list) {
-        $process = Mage::getModel('index/process')->load(5);
-        $process->reindexAll();
-        $process = Mage::getModel('index/process')->load(6);
-        $process->reindexAll();
+    public function _addOrUpdateInfContact($customer) {
+        $basic_data = $customer->getData();
+        $cnt_data = array(
+            "FirstName" => $basic_data['firstname'],
+            "LastName" => $basic_data['lastname'],
+            "Email" => $basic_data['email'],
+        );
 
-        return;
+        if ($address_data1 = $customer->getPrimaryBillingAddress()) {
+            $cnt_data["StreetAddress1"] = $address_data1->getStreet1();
+            $cnt_data["StreetAddress2"] = $address_data1->getStreet2();
+            $cnt_data["City"] = $address_data1->getCity();
+            $cnt_data["State"] = $address_data1->getRegion();
+            $cnt_data["PostalCode"] = $address_data1->getPostcode();
+        }
+        if ($address_data2 = $customer->getPrimaryShippingAddress()) {
+            $cnt_data["Address2Street1"] = $address_data2->getStreet1();
+            $cnt_data["Address2Street2"] = $address_data2->getStreet2();
+            $cnt_data["City2"] = $address_data2->getCity();
+            $cnt_data["State2"] = $address_data2->getRegion();
+            $cnt_data["PostalCode2"] = $address_data2->getPostcode();
+        }
+
+        if ($addt_address = array_shift($customer->getAdditionalAddresses())) {
+            $cnt_data["Address3Street1"] = $addt_address->getStreet1();
+            $cnt_data["Address3Street2"] = $addt_address->getStreet2();
+            $cnt_data["City3"] = $addt_address->getCity();
+            $cnt_data["State3"] = $addt_address->getRegion();
+            $cnt_data["PostalCode3"] = $addt_address->getPostcode();
+        }
+        return $this->_app->addWithDupCheck($cnt_data, self::API_CONT_DUP_CHECK);
     }
 
-    public function _get_category_ids($product_id) {
-        $product = Mage::getModel('catalog/product')->load($product_id);
-        $ids = array();
-        $cats = $product->getCategoryIds();
-        foreach ($cats as $key => $category_id) {
-            $ids[$key]['category_id'] = $category_id;
-            $_cat = Mage::getModel('catalog/category')->load($category_id);
+    public function _addOrUpdateInfProduct($product) {
+        $form_data = $product->getData();
+        $data = array(
+            "ProductName" => $form_data['name'],
+            "Description" => $form_data['description'],
+            "ShortDescription" => $form_data['short_description'],
+            "Sku" => $form_data['sku'],
+            "Status" => $form_data['status'],
+            "InventoryLimit" => $form_data['stock_data']['original_inventory_qty'],
+            "ProductPrice" => $form_data['price'],
+        );
 
-            $_parent_cats = $_cat->getParentCategories();
-            foreach ($_parent_cats as $parent) {
-                if ($category_id != $parent->getId())
-                    $ids[$key]['parent_id'][] = $parent->getId();
-            }
+        $if_prod_id = $product->getData(self::EAV_PRODUCT_CODE);
+        if ($if_prod_id)
+            $ldData = $this->loadData('Product', $if_prod_id, array('ProductName'));
+
+        if (!empty($if_prod_id) && !empty($ldData)) {
+            $this->updateData('Product', $if_prod_id, $data);
+        } else {
+            $if_prod_id = $this->addData('Product', $data);
         }
-        return $ids;
+
+        if ($form_data['category_ids']) {
+            $retCats = $this->_addOrUpdateInfCatKey(array_unique($form_data['category_ids']));
+            $this->_addOrUpdateInfProCatAssign($if_prod_id, $retCats);
+        }
+
+        return $if_prod_id;
+    }
+
+    protected function _syncInfusion($sync_data) {
+        $this->_app = new iSDK;
+        $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'throw');
+        if (!$this->_appConnection)
+            return;
+
+        $message = '';
+        foreach ($sync_data['list_options']['value'] as $value) :
+            switch ($value) {
+                case 'customer':
+                    $cust_count = $this->_syncCustomer();
+                    $message .= "$cust_count Customers, ";
+                    break;
+                case 'product':
+                    $prod_count = $this->_syncProduct();
+                    $message .= "$prod_count Products, ";
+                    break;
+                default:
+                    break;
+            }
+        endforeach;
+        $message = rtrim($message, " ,");
+        $message .= " Synchronized with Infusionsoft";
+
+        $_POST['groups']['tab_2']['fields']['sync_enabled']['value'] = 0;
+        $_POST['groups']['tab_2']['fields']['list_options']['value'] = '';
+        Mage::getSingleton('core/session')->addSuccess($message);
+    }
+
+    protected function _syncCustomer() {
+        $customerCollection = Mage::getModel('customer/customer')->getCollection()->addAttributeToSelect('*');
+        $i = 0;
+        foreach ($customerCollection as $customer) :
+            $conID = $this->_addOrUpdateInfContact($customer);
+            $customer->setInfusionsoftContactId($conID);
+            $i++;
+        endforeach;
+        return $i;
+    }
+
+    protected function _syncProduct() {
+        $productCollection = Mage::getResourceModel('catalog/product_collection')->addAttributeToFilter('type_id', array('eq' => 'simple'))->addAttributeToSelect('*');
+        $i = 0;
+        foreach ($productCollection as $product) :
+            if ($i < 3) {
+                $prodID = $this->_addOrUpdateInfProduct($product);
+                $product->setInfusionsoftProductId($prodID);
+            } else {
+                break;
+            }
+            $i++;
+        endforeach;
+        return $i;
+    }
+
+    protected function _synCategory(&$category, $update = false) {
+        $data = array('CategoryDisplayName' => $category->getName());
+        $if_cat_id = $category->getData(self::EAV_CAT_CODE);
+        if ($if_cat_id)
+            $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
+
+        if (!$update && $ldData) {
+            return $if_cat_id;
+        } elseif ($ldData) {
+            $this->updateData('ProductCategory', $if_cat_id, $data);
+        } else {
+            $if_cat_id = $this->addData('ProductCategory', $data);
+        }
+
+        return $if_cat_id;
     }
 
 }

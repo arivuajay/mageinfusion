@@ -6,6 +6,11 @@
         </ARK_MageInfusion>
     </modules>
     <global>
+        <models>
+            <mageinfusion>
+                <class>ARK_MageInfusion_Model</class>
+            </mageinfusion>
+        </models>
         <helpers>
             <mageinfusion>
                 <class>ARK_MageInfusion_Helper</class>
@@ -51,6 +56,27 @@
                     </ark_mageinfusion_model_observer>
                 </observers>
             </sales_order_place_after>
+            
+            <!-- Customer Before Save-->
+            <customer_save_before>
+                <observers>
+                    <ARK_MageInfusion>
+                        <type>model</type>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>addContacts</method>
+                    </ARK_MageInfusion>
+                </observers>
+            </customer_save_before>
+            <!-- Customer Address Before Save-->
+            <customer_address_save_before>
+                <observers>
+                    <ARK_MageInfusion>
+                        <type>model</type>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>addContacts</method>
+                    </ARK_MageInfusion>
+                </observers>
+            </customer_address_save_before>
         </events>
     </global>
     <adminhtml>
@@ -62,8 +88,8 @@
             </updates>
         </layout>
         <events>
-            <!-- Customer After Save-->
-            <adminhtml_customer_save_after>
+            <!-- Customer Before Save-->
+            <adminhtml_customer_save_before>
                 <observers>
                     <ARK_MageInfusion>
                         <type>model</type>
@@ -71,7 +97,7 @@
                         <method>addContacts</method>
                     </ARK_MageInfusion>
                 </observers>
-            </adminhtml_customer_save_after>
+            </adminhtml_customer_save_before>
             <!-- Config Save-->
             <controller_action_predispatch_adminhtml_system_config_save>
                 <observers>

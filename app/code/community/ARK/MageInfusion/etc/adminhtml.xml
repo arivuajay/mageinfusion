@@ -10,8 +10,12 @@
                                 <children>
                                     <mageinftab translate="title" module="mageinfusion">
                                         <title>InfusionSoft options Section</title>
-                                        <sort_order>200</sort_order>
+                                        <sort_order>300</sort_order>
                                     </mageinftab>
+                                    <magesync translate="title" module="mageinfusion">
+                                        <title>InfusionSoft options Section</title>
+                                        <sort_order>400</sort_order>
+                                    </magesync>
                                 </children>
                             </config>
                         </children>

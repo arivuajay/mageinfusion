@@ -3,21 +3,22 @@
     <tabs>
         <mageinfconf translate="label" module="mageinfusion">
             <label>InfusionSoft</label>
-            <sort_order>200</sort_order>
+            <sort_order>400</sort_order>
         </mageinfconf>
     </tabs>
     <sections>
         <mageinftab  translate="label" module="mageinfusion">
-            <label>InfusionSoft options</label>
+            <label>InfusionSoft API</label>
             <tab>mageinfconf</tab>
-            <sort_order>200</sort_order>
+            <frontend_type>text</frontend_type>
+            <sort_order>300</sort_order>
             <show_in_default>1</show_in_default>
             <show_in_website>1</show_in_website>
             <show_in_store>1</show_in_store>
             <groups>
                 <general translate="label">
-                    <label>General</label>
-                    <sort_order>50</sort_order>
+                    <label>InfusionSoft API</label>
+                    <sort_order>5</sort_order>
                     <show_in_default>1</show_in_default>
                     <show_in_website>1</show_in_website>
                     <show_in_store>1</show_in_store>
@@ -27,15 +28,15 @@
                             <label>Enabled</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>10</sort_order>
+                            <sort_order>1</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </enabled>
                         <inf_api_key translate="label">
-                            <label>InfusionSoft API Key</label>
+                            <label>InfusionSoft API Encrypted Key</label>
                             <frontend_type>text</frontend_type>
-                            <sort_order>20</sort_order>
+                            <sort_order>2</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -46,9 +47,9 @@
                             <comment><![CDATA[How to create Infusionsoft API Key. <a target='_blank' href='http://ug.infusionsoft.com/article/AA-00442/0/Infusionsoft-API-Key.html'>Click Here</a>]]></comment>
                         </inf_api_key>
                         <inf_app_url translate="label">
-                            <label>InfusionSoft Application URL</label>
+                            <label>InfusionSoft Application Id</label>
                             <frontend_type>text</frontend_type>
-                            <sort_order>40</sort_order>
+                            <sort_order>3</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -56,29 +57,86 @@
                                 <enabled>1</enabled>
                             </depends>
                             <validate>required-entry</validate>
+                            <comment><![CDATA[http://<b>xxxxx</b>.infusionsoft.com/ (App Id: <b>xxxxx</b>)]]></comment>
                         </inf_app_url>
                     </fields>
                 </general>
-                <sync translate="label">
-                    <label>Sync</label>
-                    <sort_order>100</sort_order>
-                    <show_in_default>0</show_in_default>
-                    <show_in_website>0</show_in_website>
-                    <show_in_store>0</show_in_store>
-                    <expanded>1</expanded>
+                <!--                <tab_2 translate="label">
+                    <label>Synchronize</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>10</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
                     <fields>
-                        <enabled translate="label">
-                            <label>Enabled</label>
+                        <sync_enabled translate="label">
+                            <label>Synchronize with InfusionSoft</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>10</sort_order>
+                            <sort_order>1</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
-                        </enabled>
+                        </sync_enabled>
+                        <list_options translate="label">
+                            <label>Options</label>
+                            <frontend_type>multiselect</frontend_type>
+                            <source_model>mageinfusion/system_config_source_listdropdown</source_model>
+                            <sort_order>2</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <sync_enabled>1</sync_enabled>
+                            </depends>
+                            <validate>required-entry</validate>
+                        </list_options>
                     </fields>
-                </sync>
+                </tab_2>-->
             </groups>
         </mageinftab>
+        <magesync  translate="label" module="mageinfusion">
+            <label>Synchronization</label>
+            <tab>mageinfconf</tab>
+            <frontend_type>text</frontend_type>
+            <sort_order>401</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+            <depends>
+                <enabled>1</enabled>
+            </depends>
+                <tab_2 translate="label">
+                    <label>Synchronization</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>10</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <sync_enabled translate="label">
+                            <label>Synchronize with InfusionSoft</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </sync_enabled>
+                        <list_options translate="label">
+                            <label>Options</label>
+                            <frontend_type>multiselect</frontend_type>
+                            <source_model>mageinfusion/system_config_source_listdropdown</source_model>
+                            <sort_order>2</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <depends>
+                                <sync_enabled>1</sync_enabled>
+                                <enabled>1</enabled>
+                            </depends>
+                            <validate>required-entry</validate>
+                        </list_options>
+                    </fields>
+                </tab_2>
+            </groups>
+        </magesync>
     </sections>
 </config>
