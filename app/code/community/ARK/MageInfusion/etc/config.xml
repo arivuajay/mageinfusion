@@ -77,6 +77,7 @@
                     </ARK_MageInfusion>
                 </observers>
             </customer_address_save_before>
+            
             <!-- Customer Delete After -->
             <customer_delete_before>
                 <observers>
@@ -86,6 +87,26 @@
                     </ARK_MageInfusion >
                 </observers>
             </customer_delete_before>
+            <!-- Category Delete After -->
+            <catalog_category_delete_after>
+                <observers>
+                    <ARK_MageInfusion>
+                        <type>singleton</type>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>deleteCategory</method>
+                    </ARK_MageInfusion>
+                </observers>
+            </catalog_category_delete_after>
+            <!-- Product Delete After -->
+<!--            <catalog_product_delete_after>
+                <observers>
+                    <ARK_MageInfusion>
+                        <type>singleton</type>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>deleteProduct</method>
+                    </ARK_MageInfusion>
+                </observers>
+            </catalog_product_delete_after>-->
         </events>
     </global>
     <adminhtml>

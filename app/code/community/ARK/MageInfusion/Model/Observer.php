@@ -48,6 +48,10 @@ class ARK_MageInfusion_Model_Observer {
         return;
     }
 
+    /**
+     * 
+     * @param type $data
+     */
     protected function _createConfigFile($data) {
         $appURL = $data['inf_app_url']['value'];
         $appAPI = $data['inf_api_key']['value'];
@@ -188,14 +192,47 @@ class ARK_MageInfusion_Model_Observer {
         );
         return true;
     }
-    
+
+    /**
+     * 
+     * @param type $observer
+     * @return type
+     */
     public function deleteCustomer($observer) {
         if (!$this->_appConnection)
             return;
         
-        $event = $observer->getEvent();
-        $customer = $event->getCustomer();
-        $this->deleteData('Contact', $customer->getInfusionsoftContactId());
+        $id = $observer->getEvent()->getCustomer()->getInfusionsoftContactId();
+        if($id)
+            $this->deleteData('Contact', $id);
+    }
+
+    /**
+     * 
+     * @param type $observer
+     * @return type
+     */
+    public function deleteCategory($observer) {
+        if (!$this->_appConnection)
+            return;
+        
+        $id = $observer->getEvent()->getCategory()->getInfusionsoftCategoryId();
+        if($id)
+            $this->deleteData('ProductCategory', $id);
+    }
+
+    /**
+     * 
+     * @param type $observer
+     * @return type
+     */
+    public function deleteProduct($observer) {
+        if (!$this->_appConnection)
+            return;
+        
+        $id = $observer->getEvent()->getProduct()->getInfusionsoftProductId();
+        if($id)
+            $this->deleteData('Product', $id);
     }
 
     /**
