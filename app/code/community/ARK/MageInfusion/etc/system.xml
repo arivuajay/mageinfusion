@@ -102,9 +102,6 @@
             <show_in_website>1</show_in_website>
             <show_in_store>1</show_in_store>
             <groups>
-            <depends>
-                <enabled>1</enabled>
-            </depends>
                 <tab_2 translate="label">
                     <label>Synchronization</label>
                     <frontend_type>text</frontend_type>
