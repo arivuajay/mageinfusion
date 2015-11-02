@@ -49,7 +49,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $data
      */
     protected function _createConfigFile($data) {
@@ -85,7 +85,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param Varien_Event_Observer $observer
      * @return type
      */
@@ -105,7 +105,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $observer
      * @return type
      */
@@ -145,7 +145,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $observer
      * @return boolean
      */
@@ -162,7 +162,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $observer
      * @return boolean
      */
@@ -194,42 +194,42 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $observer
      * @return type
      */
     public function deleteCustomer($observer) {
         if (!$this->_appConnection)
             return;
-        
+
         $id = $observer->getEvent()->getCustomer()->getInfusionsoftContactId();
         if($id)
             $this->deleteData('Contact', $id);
     }
 
     /**
-     * 
+     *
      * @param type $observer
      * @return type
      */
     public function deleteCategory($observer) {
         if (!$this->_appConnection)
             return;
-        
+
         $id = $observer->getEvent()->getCategory()->getInfusionsoftCategoryId();
         if($id)
             $this->deleteData('ProductCategory', $id);
     }
 
     /**
-     * 
+     *
      * @param type $observer
      * @return type
      */
     public function deleteProduct($observer) {
         if (!$this->_appConnection)
             return;
-        
+
         $id = $observer->getEvent()->getProduct()->getInfusionsoftProductId();
         if($id)
             $this->deleteData('Product', $id);
@@ -293,7 +293,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $tblName
      * @param type $id
      * @return type
@@ -306,7 +306,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $list
      * @return type
      */
@@ -320,7 +320,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $product_id
      * @return type
      */
@@ -342,7 +342,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $catIDS
      * @return type
      */
@@ -371,7 +371,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $category
      * @param type $update
      * @return type
@@ -392,9 +392,9 @@ class ARK_MageInfusion_Model_Observer {
 
         return $if_cat_id;
     }
-    
+
     /**
-     * 
+     *
      * @param type $prodID
      * @param type $catIDS
      */
@@ -422,7 +422,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $customer
      * @return type
      */
@@ -458,9 +458,9 @@ class ARK_MageInfusion_Model_Observer {
         }
         return $this->_app->addWithDupCheck($cnt_data, self::API_CONT_DUP_CHECK);
     }
-    
+
     /**
-     * 
+     *
      * @param type $product
      * @return type
      */
@@ -495,7 +495,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $sync_data
      * @return type
      */
@@ -531,7 +531,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @return int
      */
     protected function _syncAllCustomer() {
@@ -546,7 +546,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @return int
      */
     protected function _syncAllProduct() {
@@ -561,7 +561,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @return int
      */
     protected function _syncAllCategory() {
@@ -569,7 +569,8 @@ class ARK_MageInfusion_Model_Observer {
         $i = 0;
         $catIDS = array();
         foreach ($categoryCollection as $category) :
-            if (!empty($category->getName())) :
+            $catname = $category->getName();
+            if (!empty($catname)) :
                 $catIDS[] = $category->getId();
                 $i++;
             endif;
