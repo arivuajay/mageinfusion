@@ -3,10 +3,10 @@
 
 class ARK_MageInfusion_Helper_Data extends Mage_Core_Helper_Abstract {
 //
-//    const XML_PATH_ENABLED = 'mageinftab/general/enabled';
-//    const XML_PATH_CLIENT_ID = 'mageinftab/general/client_id';
-//    const XML_PATH_CLIENT_SECRET = 'mageinftab/general/client_secret';
-//    const XML_PATH_REDIRECT_URI = 'mageinftab/general/client_redirect';
+//    const XML_PATH_ENABLED = 'mageinfconfigtab/general/enabled';
+//    const XML_PATH_CLIENT_ID = 'mageinfconfigtab/general/client_id';
+//    const XML_PATH_CLIENT_SECRET = 'mageinfconfigtab/general/client_secret';
+//    const XML_PATH_REDIRECT_URI = 'mageinfconfigtab/general/client_redirect';
 //
 //    public function __construct() {
 //        if (($this->isEnabled = $this->_isEnabled())) {

@@ -4,9 +4,9 @@ class ARK_MageInfusion_Helper_Client extends Mage_Core_Helper_Abstract {
 
     protected $client;
 
-    const XML_PATH_ENABLED = 'mageinftab/general/enabled';
-    const XML_PATH_API_KEY = 'mageinftab/general/inf_api_key';
-    const XML_PATH_APP_URL = 'mageinftab/general/inf_app_url';
+    const XML_PATH_ENABLED = 'mageinfconfigtab/general/enabled';
+    const XML_PATH_API_KEY = 'mageinfconfigtab/general/inf_api_key';
+    const XML_PATH_APP_URL = 'mageinfconfigtab/general/inf_app_url';
 
     public function __construct() {
         if ($this->isEnabled = $this->_isEnabled()) {

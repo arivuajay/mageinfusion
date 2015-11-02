@@ -16,7 +16,7 @@ class ARK_MageInfusion_Model_Observer {
     public function __construct() {
         $this->_client = Mage::helper('mageinfusion/client');
         $form_data = Mage::app()->getRequest()->getParams();
-        if ($form_data['section'] != 'mageinftab' && $this->_client->isEnabled()) {
+        if ($form_data['section'] != 'mageinfconfigtab' && $this->_client->isEnabled()) {
             $this->_app = new iSDK;
             $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'throw');
         }
@@ -27,56 +27,57 @@ class ARK_MageInfusion_Model_Observer {
      * @param Varien_Event_Observer $observer
      * @return type
      */
-    public function addConfigFile(Varien_Event_Observer $observer) {
+    public function saveInfConfig(Varien_Event_Observer $observer) {
         $request = $observer->getControllerAction()->getRequest();
         $groups = $request->getPost('groups');
-        
-        if ($request->getParam('section') != 'mageinftab') {
-            if ($request->getParam('section') == 'magesync') {
-                /* SYNCRONIZATION */
-                $sync_data = $groups['tab_2']['fields'];
-                if ($sync_data['sync_enabled']['value'] == '1') {
-                    $this->_syncInfusion($sync_data);
-                }
+
+        if ($request->getParam('section') == 'mageinfconfigtab') {
+            $data = $groups['general']['fields'];
+            if ($data['enabled']['value'] == '1') {
+                $this->_createConfigFile($data);
             }
-            return;
-        }
-
-        $data = $groups['general']['fields'];
-        if ($data['enabled']['value'] == '1') {
-            $appURL = $data['inf_app_url']['value'];
-            $appAPI = $data['inf_api_key']['value'];
-
-            $cf_file_path = dirname(__FILE__) . "/../Helper/iSDK/conn.cfg.php";
-            $config_file = fopen($cf_file_path, "w") or die("Unable to open file!");
-            chmod($config_file, 0777);
-            $txt = "<?php \n";
-            $txt .= "\$connInfo = array( \n";
-            $txt .=" \t '{$appURL}:{$appURL}:i:{$appAPI}:This is for {$appURL}.infusionsoft.com' \n";
-            $txt .= ");";
-
-            fwrite($config_file, $txt);
-            fclose($config_file);
-
-            if (is_file($cf_file_path)) {
-                try {
-                    $this->_app = new iSDK;
-                    $this->_appConnection = $this->_app->cfgCon($appURL, 'throw');
-
-                    Mage::getSingleton('core/session')->addSuccess("Successfully connected with Infusionsoft");
-                } catch (iSDKException $e) {
-                    Mage::getSingleton('core/session')->addError("Infusionsoft Error: {$e->getMessage()}");
-
-                    $_POST['groups']['general']['fields']['enabled']['value'] = '0';
-                    $_POST['groups']['general']['fields']['inf_app_url']['value'] = '';
-                    $_POST['groups']['general']['fields']['inf_api_key']['value'] = '';
-                    @unlink($cf_file_path);
-                }
+        } else if ($request->getParam('section') == 'mageinfoptiontab') {
+            if (!$this->_client->isEnabled()) {
+                Mage::getSingleton('core/session')->addError("Infusionsoft Error: Enable Infusionsoft API before Synchronize");
+                return false;
             }
+
+            $sync_data = $groups['inf_app_sync']['fields'];
+            $this->_syncInfusion($sync_data);
         }
-
-
         return;
+    }
+
+    protected function _createConfigFile($data) {
+        $appURL = $data['inf_app_url']['value'];
+        $appAPI = $data['inf_api_key']['value'];
+
+        $cf_file_path = dirname(__FILE__) . "/../Helper/iSDK/conn.cfg.php";
+        $config_file = fopen($cf_file_path, "w") or die("Unable to open file!");
+        chmod($config_file, 0777);
+        $txt = "<?php \n";
+        $txt .= "\$connInfo = array( \n";
+        $txt .=" \t '{$appURL}:{$appURL}:i:{$appAPI}:This is for {$appURL}.infusionsoft.com' \n";
+        $txt .= ");";
+
+        fwrite($config_file, $txt);
+        fclose($config_file);
+
+        if (is_file($cf_file_path)) {
+            try {
+                $this->_app = new iSDK;
+                $this->_appConnection = $this->_app->cfgCon($appURL, 'throw');
+
+                Mage::getSingleton('core/session')->addSuccess("Successfully connected with Infusionsoft");
+            } catch (iSDKException $e) {
+                Mage::getSingleton('core/session')->addError("Infusionsoft Error: {$e->getMessage()}");
+
+                $_POST['groups']['general']['fields']['enabled']['value'] = '0';
+                $_POST['groups']['general']['fields']['inf_app_url']['value'] = '';
+                $_POST['groups']['general']['fields']['inf_api_key']['value'] = '';
+                @unlink($cf_file_path);
+            }
+        }
     }
 
     /**
@@ -187,6 +188,15 @@ class ARK_MageInfusion_Model_Observer {
         );
         return true;
     }
+    
+    public function deleteCustomer($observer) {
+        if (!$this->_appConnection)
+            return;
+        
+        $event = $observer->getEvent();
+        $customer = $event->getCustomer();
+        $this->deleteData('Contact', $customer->getInfusionsoftContactId());
+    }
 
     /**
      *
@@ -258,6 +268,11 @@ class ARK_MageInfusion_Model_Observer {
         return $this->_app->dsDelete($tblName, $id);
     }
 
+    /**
+     * 
+     * @param type $list
+     * @return type
+     */
     public function manualReIndex($list) {
         $process = Mage::getModel('index/process')->load(5);
         $process->reindexAll();
@@ -267,6 +282,11 @@ class ARK_MageInfusion_Model_Observer {
         return;
     }
 
+    /**
+     * 
+     * @param type $product_id
+     * @return type
+     */
     public function _get_category_ids($product_id) {
         $product = Mage::getModel('catalog/product')->load($product_id);
         $ids = array();
@@ -284,6 +304,11 @@ class ARK_MageInfusion_Model_Observer {
         return $ids;
     }
 
+    /**
+     * 
+     * @param type $catIDS
+     * @return type
+     */
     public function _addOrUpdateInfCatKey($catIDS = null) {
         $reIndex = false;
         $retCats = array();
@@ -308,6 +333,34 @@ class ARK_MageInfusion_Model_Observer {
         return $retCats;
     }
 
+    /**
+     * 
+     * @param type $category
+     * @param type $update
+     * @return type
+     */
+    protected function _synCategory(&$category, $update = false) {
+        $data = array('CategoryDisplayName' => $category->getName());
+        $if_cat_id = $category->getData(self::EAV_CAT_CODE);
+        if ($if_cat_id)
+            $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
+
+        if (!$update && $ldData) {
+            return $if_cat_id;
+        } elseif ($ldData) {
+            $this->updateData('ProductCategory', $if_cat_id, $data);
+        } else {
+            $if_cat_id = $this->addData('ProductCategory', $data);
+        }
+
+        return $if_cat_id;
+    }
+    
+    /**
+     * 
+     * @param type $prodID
+     * @param type $catIDS
+     */
     public function _addOrUpdateInfProCatAssign($prodID, $catIDS) {
         if ($prodID && $catIDS) {
             $record = $this->findData('ProductCategoryAssign', 1000, 0, 'ProductId', $prodID, array('Id', 'ProductCategoryId'));
@@ -331,6 +384,11 @@ class ARK_MageInfusion_Model_Observer {
         }
     }
 
+    /**
+     * 
+     * @param type $customer
+     * @return type
+     */
     public function _addOrUpdateInfContact($customer) {
         $basic_data = $customer->getData();
         $cnt_data = array(
@@ -363,7 +421,12 @@ class ARK_MageInfusion_Model_Observer {
         }
         return $this->_app->addWithDupCheck($cnt_data, self::API_CONT_DUP_CHECK);
     }
-
+    
+    /**
+     * 
+     * @param type $product
+     * @return type
+     */
     public function _addOrUpdateInfProduct($product) {
         $form_data = $product->getData();
         $data = array(
@@ -394,9 +457,14 @@ class ARK_MageInfusion_Model_Observer {
         return $if_prod_id;
     }
 
+    /**
+     * 
+     * @param type $sync_data
+     * @return type
+     */
     protected function _syncInfusion($sync_data) {
         $this->_app = new iSDK;
-        $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'throw');
+        $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
         if (!$this->_appConnection)
             return;
 
@@ -404,26 +472,32 @@ class ARK_MageInfusion_Model_Observer {
         foreach ($sync_data['list_options']['value'] as $value) :
             switch ($value) {
                 case 'customer':
-                    $cust_count = $this->_syncCustomer();
+                    $cust_count = $this->_syncAllCustomer();
                     $message .= "$cust_count Customers, ";
                     break;
                 case 'product':
-                    $prod_count = $this->_syncProduct();
+                    $prod_count = $this->_syncAllProduct();
                     $message .= "$prod_count Products, ";
+                    break;
+                case 'category':
+                    $cat_count = $this->_syncAllCategory();
+                    $message .= "$cat_count Categories, ";
                     break;
                 default:
                     break;
             }
         endforeach;
-        $message = rtrim($message, " ,");
-        $message .= " Synchronized with Infusionsoft";
+        $message = rtrim($message, " ,") . " Synchronized with Infusionsoft";
 
-        $_POST['groups']['tab_2']['fields']['sync_enabled']['value'] = 0;
-        $_POST['groups']['tab_2']['fields']['list_options']['value'] = '';
+        $_POST['groups']['inf_app_sync']['fields']['list_options']['value'] = '';
         Mage::getSingleton('core/session')->addSuccess($message);
     }
 
-    protected function _syncCustomer() {
+    /**
+     * 
+     * @return int
+     */
+    protected function _syncAllCustomer() {
         $customerCollection = Mage::getModel('customer/customer')->getCollection()->addAttributeToSelect('*');
         $i = 0;
         foreach ($customerCollection as $customer) :
@@ -434,36 +508,37 @@ class ARK_MageInfusion_Model_Observer {
         return $i;
     }
 
-    protected function _syncProduct() {
+    /**
+     * 
+     * @return int
+     */
+    protected function _syncAllProduct() {
         $productCollection = Mage::getResourceModel('catalog/product_collection')->addAttributeToFilter('type_id', array('eq' => 'simple'))->addAttributeToSelect('*');
         $i = 0;
         foreach ($productCollection as $product) :
-            if ($i < 3) {
-                $prodID = $this->_addOrUpdateInfProduct($product);
-                $product->setInfusionsoftProductId($prodID);
-            } else {
-                break;
-            }
+            $prodID = $this->_addOrUpdateInfProduct($product);
+            $product->setInfusionsoftProductId($prodID);
             $i++;
         endforeach;
         return $i;
     }
 
-    protected function _synCategory(&$category, $update = false) {
-        $data = array('CategoryDisplayName' => $category->getName());
-        $if_cat_id = $category->getData(self::EAV_CAT_CODE);
-        if ($if_cat_id)
-            $ldData = $this->loadData('ProductCategory', $if_cat_id, array('CategoryDisplayName'));
-
-        if (!$update && $ldData) {
-            return $if_cat_id;
-        } elseif ($ldData) {
-            $this->updateData('ProductCategory', $if_cat_id, $data);
-        } else {
-            $if_cat_id = $this->addData('ProductCategory', $data);
-        }
-
-        return $if_cat_id;
+    /**
+     * 
+     * @return int
+     */
+    protected function _syncAllCategory() {
+        $categoryCollection = Mage::getModel('catalog/category')->getCollection()->addAttributeToSelect('*')->addIsActiveFilter();
+        $i = 0;
+        $catIDS = array();
+        foreach ($categoryCollection as $category) :
+            if (!empty($category->getName())) :
+                $catIDS[] = $category->getId();
+                $i++;
+            endif;
+        endforeach;
+        $this->_addOrUpdateInfCatKey($catIDS);
+        return $i;
     }
 
 }

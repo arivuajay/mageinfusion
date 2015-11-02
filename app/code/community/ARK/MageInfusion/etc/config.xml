@@ -77,6 +77,15 @@
                     </ARK_MageInfusion>
                 </observers>
             </customer_address_save_before>
+            <!-- Customer Delete After -->
+            <customer_delete_before>
+                <observers>
+                    <ARK_MageInfusion>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>deleteCustomer</method>
+                    </ARK_MageInfusion >
+                </observers>
+            </customer_delete_before>
         </events>
     </global>
     <adminhtml>
@@ -104,7 +113,7 @@
                     <myobserver>
                         <type>singleton</type>
                         <class>ARK_MageInfusion_Model_Observer</class>
-                        <method>addConfigFile</method>
+                        <method>saveInfConfig</method>
                     </myobserver>
                 </observers>
             </controller_action_predispatch_adminhtml_system_config_save>

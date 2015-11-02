@@ -7,8 +7,8 @@
         </mageinfconf>
     </tabs>
     <sections>
-        <mageinftab  translate="label" module="mageinfusion">
-            <label>InfusionSoft API</label>
+        <mageinfconfigtab  translate="label" module="mageinfusion">
+            <label>API Settings</label>
             <tab>mageinfconf</tab>
             <frontend_type>text</frontend_type>
             <sort_order>300</sort_order>
@@ -61,40 +61,10 @@
                         </inf_app_url>
                     </fields>
                 </general>
-                <!--                <tab_2 translate="label">
-                    <label>Synchronize</label>
-                    <frontend_type>text</frontend_type>
-                    <sort_order>10</sort_order>
-                    <show_in_default>1</show_in_default>
-                    <show_in_website>1</show_in_website>
-                    <show_in_store>1</show_in_store>
-                    <fields>
-                        <sync_enabled translate="label">
-                            <label>Synchronize with InfusionSoft</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>1</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </sync_enabled>
-                        <list_options translate="label">
-                            <label>Options</label>
-                            <frontend_type>multiselect</frontend_type>
-                            <source_model>mageinfusion/system_config_source_listdropdown</source_model>
-                            <sort_order>2</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <depends>
-                                <sync_enabled>1</sync_enabled>
-                            </depends>
-                            <validate>required-entry</validate>
-                        </list_options>
-                    </fields>
-                </tab_2>-->
             </groups>
-        </mageinftab>
-        <magesync  translate="label" module="mageinfusion">
-            <label>Synchronization</label>
+        </mageinfconfigtab>
+        <mageinfoptiontab  translate="label" module="mageinfusion">
+            <label>Options</label>
             <tab>mageinfconf</tab>
             <frontend_type>text</frontend_type>
             <sort_order>401</sort_order>
@@ -102,38 +72,30 @@
             <show_in_website>1</show_in_website>
             <show_in_store>1</show_in_store>
             <groups>
-                <tab_2 translate="label">
+                <inf_app_sync translate="label">
                     <label>Synchronization</label>
                     <frontend_type>text</frontend_type>
                     <sort_order>10</sort_order>
                     <show_in_default>1</show_in_default>
                     <show_in_website>1</show_in_website>
                     <show_in_store>1</show_in_store>
+                    <expanded>1</expanded>
                     <fields>
-                        <sync_enabled translate="label">
-                            <label>Synchronize with InfusionSoft</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>1</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </sync_enabled>
                         <list_options translate="label">
                             <label>Options</label>
                             <frontend_type>multiselect</frontend_type>
                             <source_model>mageinfusion/system_config_source_listdropdown</source_model>
                             <sort_order>2</sort_order>
                             <show_in_default>1</show_in_default>
-                            <depends>
-                                <sync_enabled>1</sync_enabled>
+<!--                            <depends>
                                 <enabled>1</enabled>
-                            </depends>
+                            </depends>-->
                             <validate>required-entry</validate>
+                            <comment>For Synchronize should enable Infusionsoft API</comment>
                         </list_options>
                     </fields>
-                </tab_2>
+                </inf_app_sync>
             </groups>
-        </magesync>
+        </mageinfoptiontab>
     </sections>
 </config>
