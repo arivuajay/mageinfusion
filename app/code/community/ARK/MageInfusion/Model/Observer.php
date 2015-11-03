@@ -108,7 +108,7 @@ class ARK_MageInfusion_Model_Observer {
         $address = $observer->getCustomerAddress();
         $customer = $address->getCustomer();
         $inf_cust_ID = $customer->getInfusionsoftContactId();
-        if ($address && $customer && !$inf_cust_ID)
+        if (!$address || !$customer || !$inf_cust_ID)
             return;
 
         if ($address->getId() == $customer->getDefaultBilling() || $address->getIsDefaultBilling() == "1") {
@@ -623,6 +623,52 @@ class ARK_MageInfusion_Model_Observer {
         endforeach;
         $this->_addOrUpdateInfCatKey($catIDS);
         return $i;
+    }
+
+    public function logCartAdd() {
+        if (!$this->_appConnection)
+            return;
+
+        if (Mage::getSingleton('customer/session')->isLoggedIn()) {
+            $customerData = Mage::getSingleton('customer/session')->getCustomer();
+            if (!$contactId = $customerData->getInfusionsoftContactId())
+                return;
+        }
+
+        $product = Mage::getModel('catalog/product')->load(Mage::app()->getRequest()->getParam('product', 0));
+        if (!$product->getId() || !$product_Id = $product->getInfusionsoftProductId())
+            return;
+
+//        $prod = $this->loadData('Product', $product_Id, array('ProductName'));
+//        if (empty($prod))
+//            return;
+
+        $creditCardId = 0;
+        $payPlanId = 0;
+
+        $productIds[] = $product_Id;
+        $subscriptionIds = array();
+        $processSpecials = false;
+        $promoCodes = array();
+        $order_id = Mage::getSingleton('core/session')->getTempOrderId();
+
+        if (empty($order_id)):
+            $order = $this->_app->placeOrder(
+                    (int) $contactId, (int) $creditCardId, (int) $payPlanId, array_map('intval', $productIds), array_map('intval', $subscriptionIds), (bool) $processSpecials, array_map('strval', $promoCodes)
+            );
+            Mage::getSingleton('core/session')->setTempOrderId($order['InvoiceId']);
+        else:
+            $price = $product->getPrice();
+            $qty = Mage::app()->getRequest()->getParam('qty', 1);
+            $desc = $product->getShortDescription();
+            $notes = Mage::helper('core/http')->getRemoteAddr();
+            $sts = $this->_app->addOrderItem((int) $order_id, (int) $product_Id, (int) 4, $price, $qty, $product->getShortDescription(), $notes);
+            echo '<pre>';
+            var_dump($sts);
+            exit;
+        endif;
+
+        return true;
     }
 
 }
