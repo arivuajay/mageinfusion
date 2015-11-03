@@ -56,7 +56,7 @@
                     </ark_mageinfusion_model_observer>
                 </observers>
             </sales_order_place_after>
-            
+
             <!-- Customer Before Save-->
             <customer_save_before>
                 <observers>
@@ -67,17 +67,7 @@
                     </ARK_MageInfusion>
                 </observers>
             </customer_save_before>
-            <!-- Customer Address Before Save-->
-            <customer_address_save_before>
-                <observers>
-                    <ARK_MageInfusion>
-                        <type>model</type>
-                        <class>ARK_MageInfusion_Model_Observer</class>
-                        <method>addContacts</method>
-                    </ARK_MageInfusion>
-                </observers>
-            </customer_address_save_before>
-            
+
             <!-- Customer Delete After -->
             <customer_delete_before>
                 <observers>
@@ -98,7 +88,7 @@
                 </observers>
             </catalog_category_delete_after>
             <!-- Product Delete After -->
-<!--            <catalog_product_delete_after>
+            <!--            <catalog_product_delete_after>
                 <observers>
                     <ARK_MageInfusion>
                         <type>singleton</type>
@@ -118,16 +108,6 @@
             </updates>
         </layout>
         <events>
-            <!-- Customer Before Save-->
-            <adminhtml_customer_save_before>
-                <observers>
-                    <ARK_MageInfusion>
-                        <type>model</type>
-                        <class>ARK_MageInfusion_Model_Observer</class>
-                        <method>addContacts</method>
-                    </ARK_MageInfusion>
-                </observers>
-            </adminhtml_customer_save_before>
             <!-- Config Save-->
             <controller_action_predispatch_adminhtml_system_config_save>
                 <observers>
@@ -158,7 +138,7 @@
                     </category_category_observer>
                 </observers>
             </catalog_category_save_before>
-            
+
         </events>
     </adminhtml>
     <frontend>
@@ -173,6 +153,18 @@
                     </ARK_MageInfusion>
                 </observers>
             </customer_login>
+
+            <!-- Customer Address Before Save-->
+            <customer_address_save_before>
+                <observers>
+                    <ARK_MageInfusion>
+                        <type>model</type>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>updateAddress</method>
+                    </ARK_MageInfusion>
+                </observers>
+            </customer_address_save_before>
+
         </events>
     </frontend>
 </config>

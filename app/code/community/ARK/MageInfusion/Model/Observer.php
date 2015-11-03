@@ -94,14 +94,36 @@ class ARK_MageInfusion_Model_Observer {
             return;
 
         $event = $observer->getEvent();
-        if ($event->getName() == 'customer_address_save_before')
-            $customer = $observer->getCustomerAddress()->getCustomer();
-        else
-            $customer = $observer->getCustomer();
+        $customer = $observer->getCustomer();
 
         $conID = $this->_addOrUpdateInfContact($customer);
         $customer->setInfusionsoftContactId($conID);
-//        $customer->save();
+    }
+
+    public function updateAddress(Varien_Event_Observer $observer) {
+        if (!$this->_appConnection)
+            return;
+
+        $cnt_data = array();
+        $address = $observer->getCustomerAddress();
+        $customer = $address->getCustomer();
+        $inf_cust_ID = $customer->getInfusionsoftContactId();
+        if ($address && $customer && !$inf_cust_ID)
+            return;
+
+        if ($address->getId() == $customer->getDefaultBilling() || $address->getIsDefaultBilling() == "1") {
+            $this->_setBillingAddress($cnt_data, $address);
+        }
+        if ($address->getId() == $customer->getDefaultShipping() || $address->getIsDefaultShipping() == "1") {
+            $this->_setShippingAddress($cnt_data, $address);
+        }
+
+        if (empty($cnt_data)) {
+            $this->_setAdditionalAddress($cnt_data, $address);
+        }
+
+        $this->_app->updateCon($inf_cust_ID, $cnt_data);
+        return;
     }
 
     /**
@@ -203,7 +225,7 @@ class ARK_MageInfusion_Model_Observer {
             return;
 
         $id = $observer->getEvent()->getCustomer()->getInfusionsoftContactId();
-        if($id)
+        if ($id)
             $this->deleteData('Contact', $id);
     }
 
@@ -217,7 +239,7 @@ class ARK_MageInfusion_Model_Observer {
             return;
 
         $id = $observer->getEvent()->getCategory()->getInfusionsoftCategoryId();
-        if($id)
+        if ($id)
             $this->deleteData('ProductCategory', $id);
     }
 
@@ -231,7 +253,7 @@ class ARK_MageInfusion_Model_Observer {
             return;
 
         $id = $observer->getEvent()->getProduct()->getInfusionsoftProductId();
-        if($id)
+        if ($id)
             $this->deleteData('Product', $id);
     }
 
@@ -428,6 +450,7 @@ class ARK_MageInfusion_Model_Observer {
      */
     public function _addOrUpdateInfContact($customer) {
         $basic_data = $customer->getData();
+        $inf_cust_id = $customer->getInfusionsoftContactId();
         $cnt_data = array(
             "FirstName" => $basic_data['firstname'],
             "LastName" => $basic_data['lastname'],
@@ -435,28 +458,51 @@ class ARK_MageInfusion_Model_Observer {
         );
 
         if ($address_data1 = $customer->getPrimaryBillingAddress()) {
-            $cnt_data["StreetAddress1"] = $address_data1->getStreet1();
-            $cnt_data["StreetAddress2"] = $address_data1->getStreet2();
-            $cnt_data["City"] = $address_data1->getCity();
-            $cnt_data["State"] = $address_data1->getRegion();
-            $cnt_data["PostalCode"] = $address_data1->getPostcode();
+            $this->_setBillingAddress($cnt_data, $address_data1);
         }
         if ($address_data2 = $customer->getPrimaryShippingAddress()) {
-            $cnt_data["Address2Street1"] = $address_data2->getStreet1();
-            $cnt_data["Address2Street2"] = $address_data2->getStreet2();
-            $cnt_data["City2"] = $address_data2->getCity();
-            $cnt_data["State2"] = $address_data2->getRegion();
-            $cnt_data["PostalCode2"] = $address_data2->getPostcode();
+            $this->_setShippingAddress($cnt_data, $address_data2);
         }
 
         if ($addt_address = array_shift($customer->getAdditionalAddresses())) {
-            $cnt_data["Address3Street1"] = $addt_address->getStreet1();
-            $cnt_data["Address3Street2"] = $addt_address->getStreet2();
-            $cnt_data["City3"] = $addt_address->getCity();
-            $cnt_data["State3"] = $addt_address->getRegion();
-            $cnt_data["PostalCode3"] = $addt_address->getPostcode();
+            $this->_setAdditionalAddress($cnt_data, $addt_address);
         }
-        return $this->_app->addWithDupCheck($cnt_data, self::API_CONT_DUP_CHECK);
+
+
+        if (!empty($inf_cust_id))
+            $inf_cust_id = $this->_app->updateCon($inf_cust_id, $cnt_data);
+
+        if (empty($inf_cust_id))
+            $inf_cust_id = $this->_app->addWithDupCheck($cnt_data, self::API_CONT_DUP_CHECK);
+
+        return $inf_cust_id;
+    }
+
+    protected function _setBillingAddress(&$infData, $address) {
+        $infData["StreetAddress1"] = $address->getStreet1();
+        $infData["StreetAddress2"] = $address->getStreet2();
+        $infData["City"] = $address->getCity();
+        $infData["State"] = $address->getRegion();
+        $infData["PostalCode"] = $address->getPostcode();
+        return $infData;
+    }
+
+    protected function _setShippingAddress(&$infData, $address) {
+        $infData["Address2Street1"] = $address->getStreet1();
+        $infData["Address2Street2"] = $address->getStreet2();
+        $infData["City2"] = $address->getCity();
+        $infData["State2"] = $address->getRegion();
+        $infData["PostalCode2"] = $address->getPostcode();
+        return $infData;
+    }
+
+    protected function _setAdditionalAddress(&$infData, $address) {
+        $infData["Address3Street1"] = $address->getStreet1();
+        $infData["Address3Street2"] = $address->getStreet2();
+        $infData["City3"] = $address->getCity();
+        $infData["State3"] = $address->getRegion();
+        $infData["PostalCode3"] = $address->getPostcode();
+        return $infData;
     }
 
     /**
