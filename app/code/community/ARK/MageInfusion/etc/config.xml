@@ -79,7 +79,7 @@
                 </observers>
             </catalog_category_delete_after>
             <!-- Product Delete After -->
-            <!--            <catalog_product_delete_after>
+            <catalog_product_delete_after>
                 <observers>
                     <ARK_MageInfusion>
                         <type>singleton</type>
@@ -87,7 +87,7 @@
                         <method>deleteProduct</method>
                     </ARK_MageInfusion>
                 </observers>
-            </catalog_product_delete_after>-->
+            </catalog_product_delete_after>
         </events>
     </global>
     <adminhtml>
@@ -164,7 +164,7 @@
                     </ARK_MageInfusion>
                 </observers>
             </customer_logout>
-            
+
             <!-- Customer Address Before Save-->
             <customer_address_save_before>
                 <observers>
@@ -175,7 +175,7 @@
                     </ARK_MageInfusion>
                 </observers>
             </customer_address_save_before>
-            
+
             <!-- Temp Cart Adding -->
             <checkout_cart_add_product_complete>
                 <observers>
@@ -186,7 +186,7 @@
                     </ARK_MageInfusion>
                 </observers>
             </checkout_cart_add_product_complete>
-            
+
 
             <!-- Order Save After -->
             <sales_order_place_after>
