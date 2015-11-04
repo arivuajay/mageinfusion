@@ -119,6 +119,12 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
 
         $product = $observer->getProduct();
         $form_data = $product->getData();
+
+        $prod_image = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB) . 'media/catalog/product' . $product->getImage();
+//        $image = "BASE64:".file_get_contents($prod_image);
+        $image = file_get_contents($prod_image);
+        $image = base64_encode($image);
+
         $data = array(
             "ProductName" => $form_data['name'],
             "Description" => $form_data['description'],
@@ -127,8 +133,8 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
             "Status" => $form_data['status'],
             "InventoryLimit" => $form_data['stock_data']['original_inventory_qty'],
             "ProductPrice" => $form_data['price'],
+            "LargeImage" => $image,
         );
-
 
         $if_prod_id = $product->getData(self::EAV_PRODUCT_CODE);
         if ($if_prod_id)
@@ -180,7 +186,7 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
 
         $order = $observer->getEvent()->getOrder();
         $contactId = $order->getCustomer()->getInfusionsoftContactId();
-
+        
         $creditCardId = 0;
         $payPlanId = 0;
 
@@ -192,10 +198,11 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
         $subscriptionIds = array();
         $processSpecials = false;
         $promoCodes = array();
-
-        $this->_app->placeOrder(
+        
+        $inf_order = $this->_app->placeOrder(
                 (int) $contactId, (int) $creditCardId, (int) $payPlanId, array_map('intval', $productIds), array_map('intval', $subscriptionIds), (bool) $processSpecials, array_map('strval', $promoCodes)
         );
+        $this->_makePayment($inf_order['InvoiceId'], $order);
         return true;
     }
 
@@ -210,16 +217,19 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
 
         $order = $observer->getEvent()->getOrder();
         $inf_tmp_id = Mage::getSingleton('core/session')->getTempOrderId();
-        if (!empty($inf_tmp_id)) {
+        $this->_makePayment($inf_tmp_id, $order);
+        Mage::getSingleton('core/session')->unsTempOrderId();
+        return true;
+    }
 
+    protected function _makePayment($inf_tmp_id, $order) {
+        if (!empty($inf_tmp_id) && !empty($order)) {
             $cust_name = $order->getCustomer()->getName();
             $payment_name = $order->getPayment()->getMethodInstance()->getTitle();
             $total = $order->getGrandTotal() - $order->getShippingAmount();
-            ;
             $currentDate = date("d-m-Y");
             $pDate = $this->_app->infuDate($currentDate);
-            $amt = $this->_app->manualPmt($inf_tmp_id, $total, $pDate, $payment_name, "{$total} paid by {$payment_name} from {$cust_name}", false);
-            Mage::getSingleton('core/session')->unsTempOrderId();
+            $this->_app->manualPmt($inf_tmp_id, $total, $pDate, $payment_name, "{$total} paid by {$payment_name} from {$cust_name}", false);
         }
         return true;
     }
@@ -370,7 +380,6 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
         if ($addt_address = array_shift($customer->getAdditionalAddresses())) {
             $this->_setAdditionalAddress($cnt_data, $addt_address);
         }
-
 
         if (!empty($inf_cust_id))
             $inf_cust_id = $this->_app->updateCon($inf_cust_id, $cnt_data);
