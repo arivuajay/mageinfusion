@@ -159,6 +159,9 @@ class ARK_MageInfusion_Model_Observer {
         }
 
         $product->setInfusionsoftProductId($if_prod_id);
+        if (Mage::getSingleton('core/session')->getSyncProcessing() == '1') {
+            $form_data['category_ids'] = $product->getCategoryIds();
+        }
 
         if ($form_data['category_ids']) {
             $retCats = $this->_addOrUpdateInfCatKey(array_unique($form_data['category_ids']));
@@ -215,7 +218,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @param type $observer
      * @return boolean
      */
@@ -229,7 +232,8 @@ class ARK_MageInfusion_Model_Observer {
 
             $cust_name = $order->getCustomer()->getName();
             $payment_name = $order->getPayment()->getMethodInstance()->getTitle();
-            $total = $order->getGrandTotal() - $order->getShippingAmount();;
+            $total = $order->getGrandTotal() - $order->getShippingAmount();
+            ;
             $currentDate = date("d-m-Y");
             $pDate = $this->_app->infuDate($currentDate);
             $amt = $this->_app->manualPmt($inf_tmp_id, $total, $pDate, $payment_name, "{$total} paid by {$payment_name} from {$cust_name}", false);
@@ -418,7 +422,7 @@ class ARK_MageInfusion_Model_Observer {
     /**
      *
      * @param type $category
-     * @param type $update
+     * @param type $update for assgn product category,just retirn the ID only
      * @return type
      */
     protected function _synCategory(&$category, $update = false) {
@@ -530,41 +534,6 @@ class ARK_MageInfusion_Model_Observer {
 
     /**
      *
-     * @param type $product
-     * @return type
-     */
-    public function _addOrUpdateInfProduct($product) {
-        $form_data = $product->getData();
-        $data = array(
-            "ProductName" => $form_data['name'],
-            "Description" => $form_data['description'],
-            "ShortDescription" => $form_data['short_description'],
-            "Sku" => $form_data['sku'],
-            "Status" => $form_data['status'],
-            "InventoryLimit" => $form_data['stock_data']['original_inventory_qty'],
-            "ProductPrice" => $form_data['price'],
-        );
-
-        $if_prod_id = $product->getData(self::EAV_PRODUCT_CODE);
-        if ($if_prod_id)
-            $ldData = $this->loadData('Product', $if_prod_id, array('ProductName'));
-
-        if (!empty($if_prod_id) && !empty($ldData)) {
-            $this->updateData('Product', $if_prod_id, $data);
-        } else {
-            $if_prod_id = $this->addData('Product', $data);
-        }
-
-        if ($form_data['category_ids']) {
-            $retCats = $this->_addOrUpdateInfCatKey(array_unique($form_data['category_ids']));
-            $this->_addOrUpdateInfProCatAssign($if_prod_id, $retCats);
-        }
-
-        return $if_prod_id;
-    }
-
-    /**
-     *
      * @param type $sync_data
      * @return type
      */
@@ -573,7 +542,7 @@ class ARK_MageInfusion_Model_Observer {
         $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
         if (!$this->_appConnection)
             return;
-
+        Mage::getSingleton('core/session')->setSyncProcessing('1');
         $message = '';
         foreach ($sync_data['list_options']['value'] as $value) :
             switch ($value) {
@@ -596,6 +565,7 @@ class ARK_MageInfusion_Model_Observer {
         $message = rtrim($message, " ,") . " Synchronized with Infusionsoft";
 
         $_POST['groups']['inf_app_sync']['fields']['list_options']['value'] = '';
+        Mage::getSingleton('core/session')->unsSyncProcessing();
         Mage::getSingleton('core/session')->addSuccess($message);
     }
 
@@ -607,8 +577,7 @@ class ARK_MageInfusion_Model_Observer {
         $customerCollection = Mage::getModel('customer/customer')->getCollection()->addAttributeToSelect('*');
         $i = 0;
         foreach ($customerCollection as $customer) :
-            $conID = $this->_addOrUpdateInfContact($customer);
-            $customer->setInfusionsoftContactId($conID);
+            $customer->save();
             $i++;
         endforeach;
         return $i;
@@ -622,8 +591,7 @@ class ARK_MageInfusion_Model_Observer {
         $productCollection = Mage::getResourceModel('catalog/product_collection')->addAttributeToFilter('type_id', array('eq' => 'simple'))->addAttributeToSelect('*');
         $i = 0;
         foreach ($productCollection as $product) :
-            $prodID = $this->_addOrUpdateInfProduct($product);
-            $product->setInfusionsoftProductId($prodID);
+            $product->save();
             $i++;
         endforeach;
         return $i;
@@ -636,20 +604,15 @@ class ARK_MageInfusion_Model_Observer {
     protected function _syncAllCategory() {
         $categoryCollection = Mage::getModel('catalog/category')->getCollection()->addAttributeToSelect('*')->addIsActiveFilter();
         $i = 0;
-        $catIDS = array();
         foreach ($categoryCollection as $category) :
-            $catname = $category->getName();
-            if (!empty($catname)) :
-                $catIDS[] = $category->getId();
-                $i++;
-            endif;
+            $category->save();
+            $i++;
         endforeach;
-        $this->_addOrUpdateInfCatKey($catIDS);
         return $i;
     }
-    
+
     /**
-     * 
+     *
      * @return boolean
      */
     public function logCartAdd() {
@@ -696,7 +659,7 @@ class ARK_MageInfusion_Model_Observer {
     }
 
     /**
-     * 
+     *
      * @return type
      */
     public function CustomerLogout() {

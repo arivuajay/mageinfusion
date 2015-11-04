@@ -13,7 +13,7 @@ $category_attribute  = array(
     'group'         =>  "General Information",
 );
 $installer->addAttribute(Mage_Catalog_Model_Category::ENTITY, ARK_MageInfusion_Model_Observer::EAV_CAT_CODE, $category_attribute);
-$installer->updateAttribute(Mage_Catalog_Model_Category::ENTITY, ARK_MageInfusion_Model_Observer::EAV_CAT_CODE, 'is_visible', '0');
+//$installer->updateAttribute(Mage_Catalog_Model_Category::ENTITY, ARK_MageInfusion_Model_Observer::EAV_CAT_CODE, 'is_visible', '0');
 
 $product_attribute = array(
     'group'             => 'General',
@@ -32,8 +32,9 @@ $product_attribute = array(
     'apply_to'          => 'simple,configurable,bundle,grouped',
     'is_configurable'   => false,
     'is_html_allowed_on_front'   => false,
+    'default'       =>  ""
 );
 $installer->addAttribute(Mage_Catalog_Model_Product::ENTITY, ARK_MageInfusion_Model_Observer::EAV_PRODUCT_CODE, $product_attribute);
-$installer->updateAttribute(Mage_Catalog_Model_Product::ENTITY, ARK_MageInfusion_Model_Observer::EAV_PRODUCT_CODE, 'is_visible', '0');
+//$installer->updateAttribute(Mage_Catalog_Model_Product::ENTITY, ARK_MageInfusion_Model_Observer::EAV_PRODUCT_CODE, 'is_visible', '0');
 $installer->endSetup();
 ?>

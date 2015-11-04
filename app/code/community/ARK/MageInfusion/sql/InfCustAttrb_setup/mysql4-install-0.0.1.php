@@ -21,6 +21,7 @@ $installer->addAttribute("customer", ARK_MageInfusion_Model_Observer::EAV_CUSTOM
     "default" => "",
     "frontend" => "",
     "unique" => false,
+    'user_defined'  =>  false,
     "note" => "InfusionSoft Contact ID",
 ));
 $installer->updateAttribute("customer", ARK_MageInfusion_Model_Observer::EAV_CUSTOMER_CODE, 'is_visible', '0');
