@@ -18,7 +18,7 @@ class ARK_MageInfusion_Model_Observer {
         $form_data = Mage::app()->getRequest()->getParams();
         if ($form_data['section'] != 'mageinfconfigtab' && $this->_client->isEnabled()) {
             $this->_app = new iSDK;
-            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'throw');
+            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
         }
     }
 
@@ -164,6 +164,7 @@ class ARK_MageInfusion_Model_Observer {
             $retCats = $this->_addOrUpdateInfCatKey(array_unique($form_data['category_ids']));
             $this->_addOrUpdateInfProCatAssign($if_prod_id, $retCats);
         }
+        return;
     }
 
     /**
@@ -192,9 +193,7 @@ class ARK_MageInfusion_Model_Observer {
         if (!$this->_appConnection)
             return;
 
-        $event = $observer->getEvent();
-        $order = $event->getOrder();
-
+        $order = $observer->getEvent()->getOrder();
         $contactId = $order->getCustomer()->getInfusionsoftContactId();
 
         $creditCardId = 0;
@@ -209,9 +208,33 @@ class ARK_MageInfusion_Model_Observer {
         $processSpecials = false;
         $promoCodes = array();
 
-        $order = $this->_app->placeOrder(
+        $this->_app->placeOrder(
                 (int) $contactId, (int) $creditCardId, (int) $payPlanId, array_map('intval', $productIds), array_map('intval', $subscriptionIds), (bool) $processSpecials, array_map('strval', $promoCodes)
         );
+        return true;
+    }
+
+    /**
+     * 
+     * @param type $observer
+     * @return boolean
+     */
+    public function addCustomerOrders($observer) {
+        if (!$this->_appConnection)
+            return;
+
+        $order = $observer->getEvent()->getOrder();
+        $inf_tmp_id = Mage::getSingleton('core/session')->getTempOrderId();
+        if (!empty($inf_tmp_id)) {
+
+            $cust_name = $order->getCustomer()->getName();
+            $payment_name = $order->getPayment()->getMethodInstance()->getTitle();
+            $total = $order->getGrandTotal() - $order->getShippingAmount();;
+            $currentDate = date("d-m-Y");
+            $pDate = $this->_app->infuDate($currentDate);
+            $amt = $this->_app->manualPmt($inf_tmp_id, $total, $pDate, $payment_name, "{$total} paid by {$payment_name} from {$cust_name}", false);
+            Mage::getSingleton('core/session')->unsTempOrderId();
+        }
         return true;
     }
 
@@ -624,7 +647,11 @@ class ARK_MageInfusion_Model_Observer {
         $this->_addOrUpdateInfCatKey($catIDS);
         return $i;
     }
-
+    
+    /**
+     * 
+     * @return boolean
+     */
     public function logCartAdd() {
         if (!$this->_appConnection)
             return;
@@ -650,25 +677,31 @@ class ARK_MageInfusion_Model_Observer {
         $subscriptionIds = array();
         $processSpecials = false;
         $promoCodes = array();
-        $order_id = Mage::getSingleton('core/session')->getTempOrderId();
+        $inf_tmp_id = Mage::getSingleton('core/session')->getTempOrderId();
 
-        if (empty($order_id)):
+        if (empty($inf_tmp_id)) {
             $order = $this->_app->placeOrder(
                     (int) $contactId, (int) $creditCardId, (int) $payPlanId, array_map('intval', $productIds), array_map('intval', $subscriptionIds), (bool) $processSpecials, array_map('strval', $promoCodes)
             );
             Mage::getSingleton('core/session')->setTempOrderId($order['InvoiceId']);
-        else:
+        } else {
             $price = $product->getPrice();
             $qty = Mage::app()->getRequest()->getParam('qty', 1);
             $desc = $product->getShortDescription();
             $notes = Mage::helper('core/http')->getRemoteAddr();
-            $sts = $this->_app->addOrderItem((int) $order_id, (int) $product_Id, (int) 4, $price, $qty, $product->getShortDescription(), $notes);
-            echo '<pre>';
-            var_dump($sts);
-            exit;
-        endif;
+            $this->_app->addOrderItem((int) $inf_tmp_id, (int) $product_Id, (int) 4, (double) $price, (int) $qty, $desc, $notes);
+        }
 
         return true;
+    }
+
+    /**
+     * 
+     * @return type
+     */
+    public function CustomerLogout() {
+        Mage::getSingleton('core/session')->unsTempOrderId();
+        return;
     }
 
 }
