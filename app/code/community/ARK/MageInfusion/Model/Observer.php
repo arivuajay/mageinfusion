@@ -2,25 +2,7 @@
 
 require_once(dirname(__FILE__) . "/../Helper/iSDK/isdk.php");
 
-class ARK_MageInfusion_Model_Observer {
-
-    protected $_client = null;
-    protected $_app = null;
-    protected $_appConnection = false;
-
-    const API_CONT_DUP_CHECK = 'Email';
-    const EAV_CAT_CODE = 'infusionsoft_category_id';
-    const EAV_PRODUCT_CODE = 'infusionsoft_product_id';
-    const EAV_CUSTOMER_CODE = 'infusionsoft_contact_id';
-
-    public function __construct() {
-        $this->_client = Mage::helper('mageinfusion/client');
-        $form_data = Mage::app()->getRequest()->getParams();
-        if ($form_data['section'] != 'mageinfconfigtab' && $this->_client->isEnabled()) {
-            $this->_app = new iSDK;
-            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
-        }
-    }
+class ARK_MageInfusion_Model_Observer extends iSDKFactory {
 
     /**
      *
@@ -282,112 +264,6 @@ class ARK_MageInfusion_Model_Observer {
         $id = $observer->getEvent()->getProduct()->getInfusionsoftProductId();
         if ($id)
             $this->deleteData('Product', $id);
-    }
-
-    /**
-     *
-     * @param type $product_id
-     * @return type
-     */
-    public function addData($tblName, $data) {
-        if (!$this->_appConnection)
-            return;
-
-        return $this->_app->dsAdd($tblName, $data);
-    }
-
-    /**
-     *
-     * @param type $tblName
-     * @param type $id
-     * @param type $returnFields
-     * @return type
-     */
-    public function loadData($tblName, $id, $returnFields) {
-        if (!$this->_appConnection)
-            return;
-
-        return $this->_app->dsLoad($tblName, $id, $returnFields);
-    }
-
-    /**
-     *
-     * @param type $tblName
-     * @param type $limit
-     * @param type $page
-     * @param type $fieldName
-     * @param type $id
-     * @param type $returnFields
-     * @return type
-     */
-    public function findData($tblName, $limit, $page, $fieldName, $id, $returnFields) {
-        if (!$this->_appConnection)
-            return;
-
-        return $this->_app->dsFind($tblName, $limit, $page, $fieldName, $id, $returnFields);
-    }
-
-    /**
-     *
-     * @param type $tblName
-     * @param type $id
-     * @param type $data
-     * @return type
-     */
-    public function updateData($tblName, $id, $data) {
-        if (!$this->_appConnection)
-            return;
-
-        return $this->_app->dsUpdate($tblName, $id, $data);
-    }
-
-    /**
-     *
-     * @param type $tblName
-     * @param type $id
-     * @return type
-     */
-    public function deleteData($tblName, $id) {
-        if (!$this->_appConnection)
-            return;
-
-        return $this->_app->dsDelete($tblName, $id);
-    }
-
-    /**
-     *
-     * @param type $list
-     * @return type
-     */
-    public function manualReIndex($list) {
-        $process = Mage::getModel('index/process')->load(5);
-        $process->reindexAll();
-        $process = Mage::getModel('index/process')->load(6);
-        $process->reindexAll();
-
-        return;
-    }
-
-    /**
-     *
-     * @param type $product_id
-     * @return type
-     */
-    public function _get_category_ids($product_id) {
-        $product = Mage::getModel('catalog/product')->load($product_id);
-        $ids = array();
-        $cats = $product->getCategoryIds();
-        foreach ($cats as $key => $category_id) {
-            $ids[$key]['category_id'] = $category_id;
-            $_cat = Mage::getModel('catalog/category')->load($category_id);
-
-            $_parent_cats = $_cat->getParentCategories();
-            foreach ($_parent_cats as $parent) {
-                if ($category_id != $parent->getId())
-                    $ids[$key]['parent_id'][] = $parent->getId();
-            }
-        }
-        return $ids;
     }
 
     /**
@@ -664,6 +540,112 @@ class ARK_MageInfusion_Model_Observer {
      */
     public function CustomerLogout() {
         Mage::getSingleton('core/session')->unsTempOrderId();
+        return;
+    }
+
+}
+
+Class iSDKFactory {
+
+    protected $_client = null;
+    protected $_app = null;
+    protected $_appConnection = false;
+
+    const API_CONT_DUP_CHECK = 'Email';
+    const EAV_CAT_CODE = 'infusionsoft_category_id';
+    const EAV_PRODUCT_CODE = 'infusionsoft_product_id';
+    const EAV_CUSTOMER_CODE = 'infusionsoft_contact_id';
+
+    public function __construct() {
+        $this->_client = Mage::helper('mageinfusion/client');
+        $form_data = Mage::app()->getRequest()->getParams();
+        if ($form_data['section'] != 'mageinfconfigtab' && $this->_client->isEnabled()) {
+            $this->_app = new iSDK;
+            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
+        }
+    }
+
+    /**
+     *
+     * @param type $product_id
+     * @return type
+     */
+    public function addData($tblName, $data) {
+        if (!$this->_appConnection)
+            return;
+
+        return $this->_app->dsAdd($tblName, $data);
+    }
+
+    /**
+     *
+     * @param type $tblName
+     * @param type $id
+     * @param type $returnFields
+     * @return type
+     */
+    public function loadData($tblName, $id, $returnFields) {
+        if (!$this->_appConnection)
+            return;
+
+        return $this->_app->dsLoad($tblName, $id, $returnFields);
+    }
+
+    /**
+     *
+     * @param type $tblName
+     * @param type $limit
+     * @param type $page
+     * @param type $fieldName
+     * @param type $id
+     * @param type $returnFields
+     * @return type
+     */
+    public function findData($tblName, $limit, $page, $fieldName, $id, $returnFields) {
+        if (!$this->_appConnection)
+            return;
+
+        return $this->_app->dsFind($tblName, $limit, $page, $fieldName, $id, $returnFields);
+    }
+
+    /**
+     *
+     * @param type $tblName
+     * @param type $id
+     * @param type $data
+     * @return type
+     */
+    public function updateData($tblName, $id, $data) {
+        if (!$this->_appConnection)
+            return;
+
+        return $this->_app->dsUpdate($tblName, $id, $data);
+    }
+
+    /**
+     *
+     * @param type $tblName
+     * @param type $id
+     * @return type
+     */
+    public function deleteData($tblName, $id) {
+        if (!$this->_appConnection)
+            return;
+
+        return $this->_app->dsDelete($tblName, $id);
+    }
+
+    /**
+     *
+     * @param type $list
+     * @return type
+     */
+    public function manualReIndex($list) {
+        $process = Mage::getModel('index/process')->load(5);
+        $process->reindexAll();
+        $process = Mage::getModel('index/process')->load(6);
+        $process->reindexAll();
+
         return;
     }
 
