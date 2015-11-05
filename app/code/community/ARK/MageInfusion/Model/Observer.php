@@ -44,6 +44,11 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
         $customer->setInfusionsoftContactId($conID);
     }
 
+    /**
+     * 
+     * @param Varien_Event_Observer $observer
+     * @return type
+     */
     public function updateAddress(Varien_Event_Observer $observer) {
         if (!$this->_appConnection)
             return;
