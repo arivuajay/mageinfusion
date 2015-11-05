@@ -1,4 +1,5 @@
 <?php
+
 require_once(dirname(__FILE__) . "/iSDK/isdk.php");
 
 Class iSDKFactory {
@@ -16,7 +17,8 @@ Class iSDKFactory {
     public function __construct() {
         $this->_client = Mage::helper('mageinfusion/client');
         $form_data = Mage::app()->getRequest()->getParams();
-        if ($form_data['section'] != 'mageinfconfigtab' && $this->_client->isEnabled()) {
+        $section = isset($form_data['section']) ? $form_data['section'] : '';
+        if ($section != 'mageinfconfigtab' && $this->_client->isEnabled()) {
             $this->_app = new iSDK;
             $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
         }
@@ -154,24 +156,26 @@ Class iSDKFactory {
             return;
         Mage::getSingleton('core/session')->setSyncProcessing('1');
         $message = '';
-        foreach ($sync_data['list_options']['value'] as $value) :
-            switch ($value) {
-                case 'customer':
-                    $cust_count = $this->_syncAllCustomer();
-                    $message .= "$cust_count Customers, ";
-                    break;
-                case 'product':
-                    $prod_count = $this->_syncAllProduct();
-                    $message .= "$prod_count Products, ";
-                    break;
-                case 'category':
-                    $cat_count = $this->_syncAllCategory();
-                    $message .= "$cat_count Categories, ";
-                    break;
-                default:
-                    break;
-            }
-        endforeach;
+        if (isset($sync_data['list_options']['value'])) {
+            foreach ($sync_data['list_options']['value'] as $value) :
+                switch ($value) {
+                    case 'customer':
+                        $cust_count = $this->_syncAllCustomer();
+                        $message .= "$cust_count Customers, ";
+                        break;
+                    case 'product':
+                        $prod_count = $this->_syncAllProduct();
+                        $message .= "$prod_count Products, ";
+                        break;
+                    case 'category':
+                        $cat_count = $this->_syncAllCategory();
+                        $message .= "$cat_count Categories, ";
+                        break;
+                    default:
+                        break;
+                }
+            endforeach;
+        }
         $message = rtrim($message, " ,") . " Synchronized with Infusionsoft";
 
         $_POST['groups']['inf_app_sync']['fields']['list_options']['value'] = '';
@@ -312,14 +316,17 @@ Class iSDKFactory {
             "Email" => $basic_data['email'],
         );
 
-        if ($address_data1 = $customer->getPrimaryBillingAddress()) {
+        $address_data1 = $customer->getPrimaryBillingAddress();
+        if ($address_data1) {
             $this->_setBillingAddress($cnt_data, $address_data1);
         }
-        if ($address_data2 = $customer->getPrimaryShippingAddress()) {
+        $address_data2 = $customer->getPrimaryShippingAddress();
+        if ($address_data2) {
             $this->_setShippingAddress($cnt_data, $address_data2);
         }
-
-        if ($addt_address = array_shift($customer->getAdditionalAddresses())) {
+        $addiAddr = $customer->getAdditionalAddresses();
+        $addt_address = array_shift($addiAddr);
+        if ($addt_address) {
             $this->_setAdditionalAddress($cnt_data, $addt_address);
         }
 
