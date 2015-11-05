@@ -187,15 +187,12 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
             $this->deleteData('Product', $id);
     }
 
-    /**
-     *
-     * @return type
-     */
-    public function CustomerLogout() {
-        Mage::getSingleton('core/session')->unsTempOrderId();
-        return;
-    }
 
+    /**
+     * 
+     * @param Varien_Event_Observer $observer
+     * @return boolean
+     */
     public function logCartAdd(Varien_Event_Observer $observer) {
         if (!$this->_appConnection)
             return;
