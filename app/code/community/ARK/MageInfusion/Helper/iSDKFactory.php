@@ -17,7 +17,7 @@ Class iSDKFactory {
         $form_data = Mage::app()->getRequest()->getParams();
         if ($form_data['section'] != 'mageinfconfigtab' && $this->_client->isEnabled()) {
             $this->_app = new iSDK;
-            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'off');
+            $this->_appConnection = $this->_app->cfgCon($this->_client->getInfAppUrl(), 'throw');
         }
     }
 

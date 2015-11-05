@@ -88,6 +88,16 @@
                     </ARK_MageInfusion>
                 </observers>
             </catalog_product_delete_after>
+            <!-- Test Function -->
+            <controller_front_init_before>
+                <observers>
+                    <ARK_MageInfusion>
+                        <type>singleton</type>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>testFunction</method>
+                    </ARK_MageInfusion>
+                </observers>
+            </controller_front_init_before>
         </events>
     </global>
     <adminhtml>
