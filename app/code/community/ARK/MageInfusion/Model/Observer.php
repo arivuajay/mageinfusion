@@ -110,23 +110,33 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
             return;
 
         $order = $observer->getOrder();
-        $contactId = $this->_getCustomerInfusionID($order->getCustomer());
-
-        $creditCardId = $payPlanId = 0;
+        $customer = $order->getCustomer();
+        $contactId = $this->_getCustomerInfusionID($customer);
+        
         $orderedItems = $order->getAllVisibleItems();
-        $productIds = array();
+        $date = $this->_app->infuDate(Mage::getModel('core/date')->date('d-m-Y'));
+        $invoiceId = $this->_app->blankOrder($contactId, "Blank Order by " . $customer->getName(), $date, 0, 0);
+        
         foreach ($orderedItems as $item) {
-            $product = Mage::getModel('catalog/product')->load($item->getProductId());
-            $productIds[] = $this->_getProductInfusionID($product);
-        }
-        $subscriptionIds = array();
-        $processSpecials = false;
-        $promoCodes = array();
+            $product = $item->getProduct();
+            $productid = $this->_getProductInfusionID($product);
+            $productprice = $product->getPrice();
+            $productqty = $item->getData('qty_ordered');
+            $desc = $product->getShortDescription();
+            $notes = "Product Of {$product->getProductUrl()} from " . Mage::helper('core/http')->getRemoteAddr();
 
-        $inf_order = $this->_app->placeOrder(
-                (int) $contactId, (int) $creditCardId, (int) $payPlanId, array_map('intval', $productIds), array_map('intval', $subscriptionIds), (bool) $processSpecials, array_map('strval', $promoCodes)
-        );
-        $this->_makePayment($inf_order['InvoiceId'], $order);
+            $this->_app->addOrderItem((int) $invoiceId, (int) $productid, (int) 4, (double) $productprice, (int) $productqty, $desc, $notes);
+        }
+        
+        $this->_makePayment($invoiceId, $order);
+        
+        $tempInvoiceId = $customer->getInfusionsoftTempOrderId();
+        if(!empty($tempInvoiceId))
+            $this->_app->deleteInvoice((int) $tempInvoiceId);
+
+        $customer->setInfusionsoftTempOrderId('');
+        $customer->save();
+        
         return true;
     }
 
@@ -195,60 +205,20 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
         if (!$product->getId())
             return;
 
-        $session = Mage::getSingleton('checkout/session');
-
-        $cart_items = $session->getQuote()->getAllItems();
-        if (!empty($cart_items)) {
-            if (!$invoiceId = Mage::getSingleton('checkout/session')->getInfusionOrderID()) {
-                $date = $this->_app->infuDate(Mage::getModel('core/date')->date('d-m-Y'));
-                $invoiceId = $this->_app->blankOrder($contactId, "Blank Order by " . $customerData->getName(), $date, 0, 0);
-                Mage::getSingleton('checkout/session')->setInfusionOrderID($invoiceId);
-            }
-
-            foreach ($cart_items as $item) {
-                $productid = $this->_getProductInfusionID($item->getProduct());
-                $productprice = $item->getPrice();
-                $productqty = $item->getQty();
-
-                $returnFields = array('Id');
-                $query = array('OrderId' => $invoiceId, 'ProductId' => $productid);
-                $orderItem = $this->_app->dsQuery("OrderItem", 1, 0, $query, $returnFields);
-                if ($orderItem) {
-                    $orderItemID = (int) $orderItem[0]['Id'];
-                    $result = $this->deleteData('OrderItem', $orderItemID);
-                }
-
-                $desc = $item->getProduct()->getShortDescription();
-                $notes = "Product Of {$item->getProduct()->getProductUrl()} from " . Mage::helper('core/http')->getRemoteAddr();
-                $result = $this->_app->addOrderItem((int) $invoiceId, (int) $productid, (int) 4, (double) $productprice, (int) $productqty, $desc, $notes);
-            }
-
-            echo '<pre>';
-            var_dump($this->loadData("Invoice", $invoiceId, array('InvoiceTotal')));
-            $subTotal = $session->getQuote()->getSubtotal();
-            var_dump($subTotal);
-            $resultTotal = $this->updateData("Invoice", $invoiceId, array('InvoiceTotal' => $subTotal));
-        } else {
-            echo "cart Empty";
+        if (!$invoiceId = $customerData->getInfusionsoftTempOrderId()) {
+            $date = $this->_app->infuDate(Mage::getModel('core/date')->date('d-m-Y'));
+            $invoiceId = $this->_app->blankOrder($contactId, "Blank Order by " . $customerData->getName(), $date, 0, 0);
+            $customerData->setInfusionsoftTempOrderId($invoiceId);
+            $customerData->save();
         }
-        var_dump($result);
-        var_dump($resultTotal);
-        exit;
-
-        if (empty($inf_tmp_id)) {
-            $order = $this->_app->placeOrder(
-                    (int) $contactId, (int) $creditCardId, (int) $payPlanId, array_map('intval', $productIds), array_map('intval', $subscriptionIds), (bool) $processSpecials, array_map('strval', $promoCodes)
-            );
-            $returnFields = array('Id');
-            $query = array('OrderId' => $order['InvoiceId'], 'ProductId' => $product_Id);
-            $orderItem = $this->_app->dsQuery("OrderItem", 1, 0, $query, $returnFields);
-            if ($orderItemId = $orderItem[0]['Id'])
-                $this->updateData("OrderItem", $orderItemId, array('Qty' => $qty));
-
-            Mage::getSingleton('core/session')->setTempOrderId($order['InvoiceId']);
-        } else {
-            $this->_app->addOrderItem((int) $inf_tmp_id, (int) $product_Id, (int) 4, (double) $price, (int) $qty, $desc, $notes);
-        }
+        
+        $productid = $this->_getProductInfusionID($product);
+        $productprice = $product->getPrice();
+        $productqty = Mage::app()->getRequest()->getParam('qty', 1);
+        $desc = $product->getShortDescription();
+        $notes = "Product Of {$product->getProductUrl()} from " . Mage::helper('core/http')->getRemoteAddr();
+        
+        $this->_app->addOrderItem((int) $invoiceId, (int) $productid, (int) 4, (double) $productprice, (int) $productqty, $desc, $notes);
 
         return true;
     }
