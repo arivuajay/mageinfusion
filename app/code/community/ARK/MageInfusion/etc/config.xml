@@ -139,6 +139,7 @@
                 </observers>
             </catalog_category_save_before>
         </events>
+
     </adminhtml>
     <frontend>
         <events>
@@ -174,6 +175,16 @@
                     </ARK_MageInfusion>
                 </observers>
             </customer_address_save_before>
+            <!-- Temp Cart Adding -->
+            <checkout_cart_add_product_complete>
+                <observers>
+                    <ARK_MageInfusion>
+                        <type>model</type>
+                        <class>ARK_MageInfusion_Model_Observer</class>
+                        <method>logCartAdd</method>
+                    </ARK_MageInfusion>
+                </observers>
+            </checkout_cart_add_product_complete>
         </events>
     </frontend>
 </config>
