@@ -11,6 +11,7 @@ Class iSDKFactory {
     const EAV_CAT_CODE = 'infusionsoft_category_id';
     const EAV_PRODUCT_CODE = 'infusionsoft_product_id';
     const EAV_CUSTOMER_CODE = 'infusionsoft_contact_id';
+    const EAV_CUSTOMER_TEMP_ORDER_CODE = 'infusionsoft_temp_order_id';
 
     public function __construct() {
         $this->_client = Mage::helper('mageinfusion/client');
