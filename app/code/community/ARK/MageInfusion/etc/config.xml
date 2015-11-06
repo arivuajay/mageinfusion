@@ -17,34 +17,12 @@
             </mageinfusion>
         </helpers>
         <resources>
-            <InfCatAttrb_setup>
+            <ark_mageinfusion_setup>
                 <setup>
                     <module>ARK_MageInfusion</module>
-                    <class>Mage_Eav_Model_Entity_Setup</class>
+                    <class>ARK_MageInfusion_Model_Resource_Setup</class>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
-            </InfCatAttrb_setup>
-            <InfCustAttrb_setup>
-                <setup>
-                    <module>ARK_MageInfusion</module>
-                    <class>Mage_Customer_Model_Entity_Setup</class>
-                </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
-            </InfCustAttrb_setup>
-            <InfCustAttrb_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </InfCustAttrb_write>
-            <InfCustAttrb_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </InfCustAttrb_read>
+            </ark_mageinfusion_setup>
         </resources>
         <events>
 
