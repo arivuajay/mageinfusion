@@ -385,7 +385,7 @@ Class iSDKFactory {
      * @return int
      */
     protected function _syncAllProduct() {
-        $productCollection = Mage::getResourceModel('catalog/product_collection')->addAttributeToFilter('type_id', array('eq' => 'simple'))->addAttributeToSelect('*');
+        $productCollection = Mage::getResourceModel('catalog/product_collection')->addAttributeToFilter('type_id', array('eq' => 'simple'))->addAttributeToFilter('status', array('eq' => 1))->addAttributeToSelect('*');
         $i = 0;
         foreach ($productCollection as $product) :
             $product->save();
