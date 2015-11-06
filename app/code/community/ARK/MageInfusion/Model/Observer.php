@@ -78,15 +78,18 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
     /**
      *
      * @param type $observer
-     * @return type
+     * @return boolean
      */
     public function addProducts(Varien_Event_Observer $observer) {
         if (!$this->_appConnection)
             return;
 
+        Mage::getSingleton('core/session')->setAddProductsProcessing('1');
         $product = $observer->getProduct();
         $if_pro_id = $this->_getProductInfusionID($product);
         $product->setInfusionsoftProductId($if_pro_id);
+        Mage::getSingleton('core/session')->unsAddProductsProcessing('');
+        return true;
     }
 
     /**
@@ -101,12 +104,16 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
         $category = $observer->getCategory();
         $if_cat_id = $this->_getCategoryInfusionID($category, true);
         $category->setInfusionsoftCategoryId($if_cat_id);
-        
-//        $products = $category->getProductCollection();
-//        echo '<pre>';
-//        print_r($products);
-//        exit;
-//
+
+        if (Mage::getSingleton('core/session')->getAddProductsProcessing() == '') {
+            $catIDS = array($if_cat_id);
+            $productCollection = $category->getProductCollection()->addAttributeToSelect('*');
+            foreach ($productCollection as $product) :
+                $prodID = $product->getInfusionsoftProductId();
+                if(!empty($prodID))
+                    $this->_assignInfusionProductCategory($prodID, $catIDS);
+            endforeach;
+        }
         return true;
     }
 
@@ -122,11 +129,11 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
         $order = $observer->getOrder();
         $customer = $order->getCustomer();
         $contactId = $this->_getCustomerInfusionID($customer);
-        
+
         $orderedItems = $order->getAllVisibleItems();
         $date = $this->_app->infuDate(Mage::getModel('core/date')->date('d-m-Y'));
         $invoiceId = $this->_app->blankOrder($contactId, "Blank Order by " . $customer->getName(), $date, 0, 0);
-        
+
         foreach ($orderedItems as $item) {
             $product = $item->getProduct();
             $productid = $this->_getProductInfusionID($product);
@@ -137,16 +144,16 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
 
             $this->_app->addOrderItem((int) $invoiceId, (int) $productid, (int) 4, (double) $productprice, (int) $productqty, $desc, $notes);
         }
-        
+
         $this->_makePayment($invoiceId, $order);
-        
+
         $tempInvoiceId = $customer->getInfusionsoftTempOrderId();
-        if(!empty($tempInvoiceId))
+        if (!empty($tempInvoiceId))
             $this->_app->deleteInvoice((int) $tempInvoiceId);
 
         $customer->setInfusionsoftTempOrderId('');
         $customer->save();
-        
+
         return true;
     }
 
@@ -192,7 +199,6 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
             $this->deleteData('Product', $id);
     }
 
-
     /**
      * 
      * @param Varien_Event_Observer $observer
@@ -218,13 +224,13 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
             $customerData->setInfusionsoftTempOrderId($invoiceId);
             $customerData->save();
         }
-        
+
         $productid = $this->_getProductInfusionID($product);
         $productprice = $product->getPrice();
         $productqty = Mage::app()->getRequest()->getParam('qty', 1);
         $desc = $product->getShortDescription();
         $notes = "Product Of {$product->getProductUrl()} from " . Mage::helper('core/http')->getRemoteAddr();
-        
+
         $this->_app->addOrderItem((int) $invoiceId, (int) $productid, (int) 4, (double) $productprice, (int) $productqty, $desc, $notes);
 
         return true;
