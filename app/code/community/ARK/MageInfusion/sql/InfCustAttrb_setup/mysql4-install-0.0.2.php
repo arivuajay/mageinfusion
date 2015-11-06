@@ -10,10 +10,10 @@ $entityTypeId = $setup->getEntityTypeId('customer');
 $attributeSetId = $setup->getDefaultAttributeSetId($entityTypeId);
 $attributeGroupId = $setup->getDefaultAttributeGroupId($entityTypeId, $attributeSetId);
 
-$installer->addAttribute("customer", ARK_MageInfusion_Model_Observer::EAV_CUSTOMER_CODE, array(
+$installer->addAttribute("customer", ARK_MageInfusion_Model_Observer::EAV_CUSTOMER_TEMP_ORDER_CODE, array(
     "type" => "varchar",
     "backend" => "",
-    "label" => "InfusionSoft Contact ID",
+    "label" => "InfusionSoft Temp Order ID",
     "input" => "text",
     "source" => "",
     "visible" => true,
@@ -22,15 +22,15 @@ $installer->addAttribute("customer", ARK_MageInfusion_Model_Observer::EAV_CUSTOM
     "frontend" => "",
     "unique" => false,
     'user_defined'  =>  false,
-    "note" => "InfusionSoft Contact ID",
+    "note" => "InfusionSoft Temp Order ID",
 ));
-$installer->updateAttribute("customer", ARK_MageInfusion_Model_Observer::EAV_CUSTOMER_CODE, 'is_visible', '0');
+$installer->updateAttribute("customer", ARK_MageInfusion_Model_Observer::EAV_CUSTOMER_TEMP_ORDER_CODE, 'is_visible', '0');
 
-$attribute = Mage::getSingleton("eav/config")->getAttribute("customer", ARK_MageInfusion_Model_Observer::EAV_CUSTOMER_CODE);
+$attribute = Mage::getSingleton("eav/config")->getAttribute("customer", ARK_MageInfusion_Model_Observer::EAV_CUSTOMER_TEMP_ORDER_CODE);
 
 
 $setup->addAttributeToGroup(
-        $entityTypeId, $attributeSetId, $attributeGroupId, 'customattribute', '999'  //sort_order
+        $entityTypeId, $attributeSetId, $attributeGroupId, 'customattribute', '1000'  //sort_order
 );
 
 $used_in_forms = array();
@@ -48,5 +48,7 @@ $attribute->setData("used_in_forms", $used_in_forms)
         ->setData("sort_order", 100)
 ;
 $attribute->save();
+
+
 
 $installer->endSetup();

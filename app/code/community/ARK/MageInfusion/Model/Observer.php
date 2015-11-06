@@ -101,6 +101,11 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
         $category = $observer->getCategory();
         $if_cat_id = $this->_getCategoryInfusionID($category, true);
         $category->setInfusionsoftCategoryId($if_cat_id);
+        
+        $products = $category->getProductCollection();
+        echo '<pre>';
+        print_r($products);
+        exit;
 
         return true;
     }
