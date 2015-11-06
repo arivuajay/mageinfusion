@@ -73,9 +73,6 @@ $attribute2->setData("used_in_forms", $used_in_forms)
         ->setData("sort_order", 999);
 $attribute2->save();
 
-//$setup->addAttributeToGroup($entityTypeId,$attributeSetId,$attributeGroupId,ARK_MageInfusion_Model_Observer::EAV_CUSTOMER_TEMP_ORDER_CODE,'999');
-
-
 // Install our custom attributes
 $installer->installCustomerAttributes();
 
