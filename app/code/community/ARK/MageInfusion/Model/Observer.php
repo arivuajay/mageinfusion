@@ -45,7 +45,7 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
     }
 
     /**
-     * 
+     *
      * @param Varien_Event_Observer $observer
      * @return type
      */
@@ -110,7 +110,7 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
             $productCollection = $category->getProductCollection()->addAttributeToSelect('*');
             foreach ($productCollection as $product) :
                 $prodID = $product->getInfusionsoftProductId();
-                if(!empty($prodID))
+                if (!empty($prodID))
                     $this->_assignInfusionProductCategory($prodID, $catIDS);
             endforeach;
         }
@@ -200,19 +200,17 @@ class ARK_MageInfusion_Model_Observer extends iSDKFactory {
     }
 
     /**
-     * 
+     *
      * @param Varien_Event_Observer $observer
      * @return boolean
      */
     public function logCartAdd(Varien_Event_Observer $observer) {
-        if (!$this->_appConnection)
+        if (!$this->_appConnection || !Mage::getSingleton('customer/session')->isLoggedIn())
             return;
 
-        if (Mage::getSingleton('customer/session')->isLoggedIn()) {
-            $customerData = Mage::getSingleton('customer/session')->getCustomer();
-            if (!$contactId = $customerData->getInfusionsoftContactId())
-                return;
-        }
+        $customerData = Mage::getSingleton('customer/session')->getCustomer();
+        if (!$contactId = $customerData->getInfusionsoftContactId())
+            return;
 
         $product = $observer->getProduct();
         if (!$product->getId())
